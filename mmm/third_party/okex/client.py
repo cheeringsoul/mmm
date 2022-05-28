@@ -47,6 +47,7 @@ class Client(object):
         return self._request(method, request_path, {})
 
     def _request_with_params(self, method, request_path, params):
+        params = {k: v for k, v in params.items() if v}
         return self._request(method, request_path, params)
 
     @classmethod
