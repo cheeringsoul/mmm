@@ -31,7 +31,7 @@ class OrderRunner:
     def set_executor(self, exchange: "Exchange", executor: "OrderExecutor"):
         self.cached_executor[exchange] = executor
 
-    async def on_order(self, order_event: "OrderEvent"):
+    async def on_order_event(self, order_event: "OrderEvent"):
         order_executor = self.get_order_executor(order_event.exchange)
         loop = asyncio.get_running_loop()
         client_order_id = await loop.run_in_executor(None, lambda: order_executor.create_order(order_event))
@@ -46,7 +46,7 @@ class OrderRunner:
         async def _create_task():
             while True:
                 event = await self.event_source.get()
-                await self.on_order(event)
+                await self.on_order_event(event)
 
         asyncio.get_event_loop().create_task(_create_task(), name=f'order-executor-wait-for-orderevent-task')  # noqa
 
