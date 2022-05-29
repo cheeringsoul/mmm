@@ -29,7 +29,7 @@ class LazySettings:
         self._wrapped = empty
 
     def _set_up(self):
-        settings_module = os.environ.get('MMM_CONFIG_MODULE')
+        settings_module = os.environ.get('MMM_SETTINGS_MODULE')
         if not settings_module:
             raise ImproperlyConfigured('settings are not configured.')
         self._wrapped = Settings(settings_module)
