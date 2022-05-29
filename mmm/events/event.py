@@ -5,6 +5,12 @@ from typing import Dict
 from mmm.project_types import OrderType, Exchange
 
 
+def clear(data, key):
+    if key in data:
+        del data[key]
+    return data
+
+
 class Event:
     def __init__(self, data=None):
         self._raw_data = data
@@ -60,8 +66,9 @@ class BarEvent(Event):
 
 class OrderEvent(Event):
     """订单相关事件"""
-    def __init__(self, exchange: "Exchange", order_type: "OrderType", params: dict):
-        super(OrderEvent, self).__init__()
+    def __init__(self, uniq_id: str, exchange: "Exchange", order_type: "OrderType", params: dict):
+        super(OrderEvent, self).__init__(clear(locals(), 'self'))
+        self.uniq_id = uniq_id
         self.exchange = exchange
         self.order_type = order_type
         self.params = params
