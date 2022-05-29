@@ -1,11 +1,14 @@
 import asyncio
 import inspect
 import logging
+
+from mmm.credential import Credential
 from mmm.events.event import Event
 from mmm.events import EventSource, default_event_source_conf, EventSourceConfig
 from typing import Type, Dict, Callable
 
 from mmm.order.manager import OrderManager, default_order_manager
+from mmm.position import PositionManager
 
 
 class StrategyMeta(type):
@@ -29,7 +32,8 @@ class Strategy(metaclass=StrategyMeta):
     __event_registry__: Dict[Type[Event], str] = {}
     __timer_registry__: Dict[int, str] = {}
 
-    def __init__(self, order_manager: OrderManager = default_order_manager):
+    def __init__(self, credential: "Credential", order_manager: OrderManager = default_order_manager):
+        self.credential = credential
         self.order_manager = order_manager
 
 
