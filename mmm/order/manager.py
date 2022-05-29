@@ -15,5 +15,8 @@ class OrderManager:
         logging.info(f'下单：订单类型{order_event.order_type}, 参数: {order_event.params}')
         self.event_source.put_nowait(order_event)
 
+    def query_order(self, uniq_id):
+        ''''''
+
 
 default_order_manager = OrderManager()
