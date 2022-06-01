@@ -1,12 +1,22 @@
 import logging
+from abc import ABCMeta, abstractmethod
 
-from mmm.events import default_event_source_conf, EventSource
+from mmm.config import settings
+from mmm.events import EventSource
 from mmm.events.event import OrderEvent
-from mmm.events import EventSourceConfig
 
 
-class OrderManager:
-    def __init__(self, event_source_conf: "EventSourceConfig" = default_event_source_conf):
+class OrderManager(metaclass=ABCMeta):
+    @abstractmethod
+    def create_order(self, *args, **kwargs): ...
+
+    @abstractmethod
+    def query_order(self, *args, **kwargs): ...
+
+
+class DefaultOrderManager(OrderManager):
+    def __init__(self):
+        event_source_conf = settings.EVENT_SOURCE_CONF
         self.event_source: "EventSource" or None = event_source_conf.get(OrderEvent)
         if self.event_source is None:
             raise RuntimeError('OrderEvent事件源未配置！')
@@ -17,6 +27,3 @@ class OrderManager:
 
     def query_order(self, uniq_id):
         ''''''
-
-
-default_order_manager = OrderManager()

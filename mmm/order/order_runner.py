@@ -1,18 +1,16 @@
 import asyncio
 import logging
 
+from mmm.config import settings
 from mmm.credential import Credential
-from mmm.events import default_event_source_conf
 from mmm.events.event import OrderEvent
-from mmm.events import EventSourceConfig
 from mmm.order.executor import OkexOrderExecutor, OrderExecutor, BinanceOrderExecutor
 from mmm.project_types import Exchange
 
 
 class OrderRunner:
-    def __init__(self, event_source_conf: "EventSourceConfig" = default_event_source_conf):
-        self.event_source_conf = event_source_conf
-        self.event_source = event_source_conf.get(OrderEvent)
+    def __init__(self):
+        self.event_source = settings.ORDER_MANAGER
         if self.event_source is None:
             logging.error('OrderEvent没有对应的事件源')
         self.credential = Credential.load_from_env()

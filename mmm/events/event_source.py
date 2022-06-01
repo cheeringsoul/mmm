@@ -32,19 +32,19 @@ class AsyncioQueueEventSource(EventSource):
         return rv
 
 
-class EventSourceConfig:
-    def __init__(self, kwargs: Dict[Type[Event], EventSource]):
-        self._config: Dict[Type[Event], EventSource] = frozendict(kwargs)
+# class EventSourceConfig:
+#     def __init__(self, kwargs: Dict[Type[Event], EventSource]):
+#         self._config: Dict[Type[Event], EventSource] = frozendict(kwargs)
+#
+#     def get(self, event: Type[Event]) -> EventSource or None:
+#         return self._config.get(event, None)
 
-    def get(self, event: Type[Event]) -> EventSource or None:
-        return self._config.get(event, None)
 
-
-default_queue_length = 10000
-default_event_source_conf = EventSourceConfig({
-    Event: AsyncioQueueEventSource(Queue(default_queue_length)),
-    TradesEvent: AsyncioQueueEventSource(Queue(default_queue_length)),
-    OrderBookEvent: AsyncioQueueEventSource(Queue(default_queue_length)),
-    BarEvent: AsyncioQueueEventSource(Queue(default_queue_length)),
-    OrderEvent: AsyncioQueueEventSource(Queue(default_queue_length))
-})
+# default_queue_length = 10000
+# default_event_source_conf = EventSourceConfig({
+#     Event: AsyncioQueueEventSource(Queue(default_queue_length)),
+#     TradesEvent: AsyncioQueueEventSource(Queue(default_queue_length)),
+#     OrderBookEvent: AsyncioQueueEventSource(Queue(default_queue_length)),
+#     BarEvent: AsyncioQueueEventSource(Queue(default_queue_length)),
+#     OrderEvent: AsyncioQueueEventSource(Queue(default_queue_length))
+# })

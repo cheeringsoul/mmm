@@ -5,7 +5,7 @@ from mmm.position.utils import get_price
 from mmm.project_types import Asset
 
 
-class PositionManager:
+class StrategyPosition:
     """仓位管理器"""
 
     def __init__(self, assets: List[Asset]):

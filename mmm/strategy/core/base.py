@@ -2,13 +2,13 @@ import asyncio
 import inspect
 import logging
 
+from mmm.config import settings
 from mmm.credential import Credential
 from mmm.events.event import Event
-from mmm.events import EventSource, default_event_source_conf, EventSourceConfig
+from mmm.events import EventSource
 from typing import Type, Dict, Callable
 
-from mmm.order.manager import OrderManager, default_order_manager
-from mmm.position import PositionManager
+from mmm.order.manager import OrderManager
 
 
 class StrategyMeta(type):
@@ -32,15 +32,15 @@ class Strategy(metaclass=StrategyMeta):
     __event_registry__: Dict[Type[Event], str] = {}
     __timer_registry__: Dict[int, str] = {}
 
-    def __init__(self, credential: "Credential", order_manager: OrderManager = default_order_manager):
+    def __init__(self, credential: "Credential"):
         self.credential = credential
-        self.order_manager = order_manager
+        self.order_manager: OrderManager = settings.ORDER_MANAGER
 
 
 class StrategyRunner:
-    def __init__(self, strategy: "Strategy", event_source_conf: "EventSourceConfig" = default_event_source_conf):
+    def __init__(self, strategy: "Strategy"):
         self.strategy = strategy
-        self.event_source_conf = event_source_conf
+        self.event_source_conf = settings.EVENT_SOURCE_CONF
 
     def create_schedule_task(self):
         async def timer(i: int, callback: Callable):

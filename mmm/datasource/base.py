@@ -1,6 +1,4 @@
-from typing import Dict, List
-
-from mmm.events import Parser, Event
+from mmm.events import Parser
 
 
 class ParserFactory:

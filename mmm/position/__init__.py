@@ -1,1 +1,1 @@
-from .manager import PositionManager
+from .manager import StrategyPosition
