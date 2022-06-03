@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Numeric, create_engine, Index
+from sqlalchemy import Column, Integer, String, DateTime, Numeric, create_engine, Index, ForeignKey
 from sqlalchemy.orm import declarative_base, declared_attr
 
 from mmm.config import settings
@@ -9,7 +9,7 @@ Base = declarative_base()
 engine = create_engine(settings.DATABASE, echo=True, future=True)
 
 
-class BaseMixin(Base):
+class Mixin:
 
     @declared_attr
     def __tablename__(cls):  # noqa
@@ -24,7 +24,8 @@ class BaseMixin(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 
-class Order(Base, BaseMixin):
+class Order(Base, Mixin):
+    strategy = Column(Integer, ForeignKey("strategy.id"), doc='strategy')
     uniq_id = Column(String(64), doc='exchange name', unique=True)
     exchange = Column(String(16), doc='exchange name')
     order_id = Column(String(128), doc='order id')
@@ -36,3 +37,12 @@ class Order(Base, BaseMixin):
     avg_price = Column(Numeric(8, 16), doc='avg price')
     turnover = Column(Numeric(8, 16), doc='turnover')
     volume = Column(Numeric(8, 16), doc='volume')
+
+
+class StrategyPosition(Base, Mixin):
+    ...
+
+
+class Strategy(Base, Mixin):
+    ...
+
