@@ -1,0 +1,3 @@
+STRATEGIES = [
+    'strategy.example.strategy'
+]

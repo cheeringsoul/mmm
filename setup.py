@@ -15,7 +15,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'mmm = mmm.management:execute_from_command_line',
+            'mmm = mmm.management:admin_cli',
         ],
     },
 )
