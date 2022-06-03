@@ -8,13 +8,11 @@ class GridStrategy(Strategy):
 
     @sub_event(TradesEvent)
     def on_ticker(self, ticker: TradesEvent):
-        """"""
         print(ticker)
         print('.'*20)
 
     @sub_event(OrderBookEvent)
     def on_orderbook(self, order_book: OrderBookEvent):
-        """"""
         print(order_book)
         print('-'*20)
 
