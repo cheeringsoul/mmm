@@ -1,42 +1,48 @@
-from abc import ABC, abstractmethod
+import asyncio
+import logging
+
+from mmm.config import settings
 from mmm.credential import Credential
-from mmm.order.utils import OkexOrderIDGenerator
-from mmm.third_party.okex.client import Client as OkexClient
+from mmm.events.event import OrderEvent
+from mmm.order.handler import OkexOrderHandler, OrderHandler, BinanceOrderHandler
+from mmm.project_types import Exchange
 
 
-class OrderExecutor(ABC):
-    def __init__(self, credential: "Credential"):
-        self.credential = credential
+class OrderExecutor:
+    def __init__(self):
+        self.event_source = settings.EVENT_SOURCE_CONF.get(OrderEvent)
+        if self.event_source is None:
+            logging.error('OrderEvent没有对应的事件源')
+        self.cached_executor = {}
 
-    @abstractmethod
-    def create_order(self, *args, **kwargs):
-        pass
+    def get_order_executor(self, exchange: "Exchange", credential: "Credential"):
+        executor = self.cached_executor.get(exchange, None)
+        if executor is None:
+            if exchange == Exchange.OKEX:
+                executor = OkexOrderHandler(credential)
+            elif exchange == Exchange.BINANCE:
+                executor = BinanceOrderHandler(credential)
+        self.set_executor(exchange, executor)
+        return executor
 
-    @abstractmethod
-    def query_order(self, client_order_id, timeout):
-        pass
+    def set_executor(self, exchange: "Exchange", executor: "OrderHandler"):
+        self.cached_executor[exchange] = executor
 
+    async def on_order_event(self, order_event: "OrderEvent"):
+        order_executor = self.get_order_executor(order_event.exchange, order_event.credential)
+        loop = asyncio.get_running_loop()
+        client_order_id = await loop.run_in_executor(None, lambda: order_executor.create_order(order_event))
+        result = await loop.run_in_executor(None, lambda: order_executor.query_order(client_order_id, 5))
+        if result is False:
+            logging.error(f"订单{client_order_id}未查询到, 下单失败")
+        else:
+            logging.info(f"订单{client_order_id}执行成功")
 
-class OkexOrderExecutor(OrderExecutor):
+    def create_task(self):
 
-    def __init__(self, credential: Credential):
-        super().__init__(credential)
-        self.client = OkexClient(credential.api_key, credential.secret_key, credential.phrase)
-        self.order_id_generator = OkexOrderIDGenerator()
+        async def _create_task():
+            while True:
+                event = await self.event_source.get()
+                await self.on_order_event(event)
 
-    def create_order(self, *args, **kwargs):
-        client_order_id = self.order_id_generator.gen()
-        # todo send order to exchange
-        return client_order_id
-
-    def query_order(self, client_order_id, timeout):
-        # todo query order
-        return client_order_id
-
-
-class BinanceOrderExecutor:
-    def __init__(self, credential: Credential):
-        super().__init__()
-
-
-
+        asyncio.get_event_loop().create_task(_create_task(), name=f'order-executor-wait-for-orderevent-task')  # noqa

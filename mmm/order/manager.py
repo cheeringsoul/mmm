@@ -15,8 +15,7 @@ class OrderManager(metaclass=ABCMeta):
 
 class DefaultOrderManager(OrderManager):
     def __init__(self):
-        event_source_conf = settings.EVENT_SOURCE_CONF
-        self.event_source: dict or None = event_source_conf.get(OrderEvent)
+        self.event_source = settings.EVENT_SOURCE_CONF.get(OrderEvent)
         if self.event_source is None:
             raise RuntimeError('OrderEvent事件源未配置！')
 

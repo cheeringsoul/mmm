@@ -11,7 +11,7 @@ import json
 import logging
 
 from mmm.datasource import OkexWsDatasource
-from mmm.order.order_runner import default_order_runner
+from mmm.order.executor import default_order_runner
 from mmm.strategy.core.base import StrategyRunner
 from mmm.events import TradesEvent, OrderBookEvent
 from mmm.project_types import Exchange

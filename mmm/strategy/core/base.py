@@ -5,10 +5,10 @@ import logging
 from mmm.config import settings
 from mmm.credential import Credential
 from mmm.events.event import Event
-from mmm.events import EventSource
 from typing import Type, Dict, Callable
 
-from mmm.order.manager import OrderManager
+from mmm.events.event_source import EventSource
+from mmm.order.manager import OrderManager, DefaultOrderManager
 
 
 class StrategyMeta(type):
@@ -32,9 +32,9 @@ class Strategy(metaclass=StrategyMeta):
     __event_registry__: Dict[Type[Event], str] = {}
     __timer_registry__: Dict[int, str] = {}
 
-    def __init__(self, credential: "Credential"):
+    def __init__(self, credential: "Credential", order_manager=None):
         self.credential = credential
-        self.order_manager: OrderManager = settings.ORDER_MANAGER
+        self.order_manager: OrderManager = order_manager or DefaultOrderManager()
 
 
 class StrategyRunner:
@@ -58,7 +58,7 @@ class StrategyRunner:
             method = getattr(self.strategy, method_name)
             loop.create_task(timer(interval, method), name=f'{self.strategy}-timer({interval})-task')
 
-    def create_listen_tasks(self):
+    def create_listening_tasks(self):
         async def _create_task(e: "EventSource", c: Callable):
             while True:
                 event = await e.get()
@@ -77,5 +77,5 @@ class StrategyRunner:
             loop.create_task(_create_task(event_source, method), name=f'{self.strategy}-wait-for-{event_type}-task')
 
     def create_tasks(self):
-        self.create_listen_tasks()
+        self.create_listening_tasks()
         self.create_schedule_task()

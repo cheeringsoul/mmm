@@ -17,6 +17,3 @@ class Dispatcher:
             event_source.put_nowait(event)
         except asyncio.queues.QueueFull:
             logging.error(event)
-
-
-dispatcher = Dispatcher()

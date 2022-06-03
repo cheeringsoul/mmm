@@ -2,3 +2,4 @@ websockets~=10.1
 frozendict~=2.2.1
 PyYAML~=6.0
 requests~=2.27.1
+pickleshare==0.7.5

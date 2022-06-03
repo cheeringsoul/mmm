@@ -5,7 +5,7 @@ import websockets
 
 from .parser import ParserFactory, parser_factory
 from mmm.events.event import Event
-from mmm.events.dispatcher import dispatcher
+from mmm.events.dispatcher import Dispatcher
 
 
 class CollectionError(Exception):
@@ -19,6 +19,7 @@ class OkexWsDatasource:
     def __init__(self, factory: "ParserFactory" = parser_factory):
         self.received_pong = False
         self.parser_factory: "ParserFactory" = factory
+        self.dispatcher = Dispatcher()
 
     async def ping(self, ws):
         await asyncio.sleep(self.__ping_interval__)
@@ -65,10 +66,10 @@ class OkexWsDatasource:
                             channel = msg['arg']['channel']
                             event = self.parser_factory.get(channel).parse(msg)
                             if isinstance(event, Event):
-                                await default_dispatcher.dispatch(event)
+                                await self.dispatcher.dispatch(event)
                             elif isinstance(event, list):
                                 for each in event:
-                                    await default_dispatcher.dispatch(each)
+                                    await self.dispatcher.dispatch(each)
                     ping.cancel()
                     ping = asyncio.create_task(self.ping(ws))
                 except Exception as e:

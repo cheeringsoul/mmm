@@ -21,9 +21,9 @@ class AsyncioQueueEventSource(EventSource):
         self.queue = queue
 
     def put_nowait(self, event: "Event"):
-        self.queue.put_nowait(event)
+        self.queue.put_nowait(event.encode())
 
     async def get(self) -> "Event":
         rv = await self.queue.get()
         self.queue.task_done()
-        return rv
+        return Event.decode(rv)
