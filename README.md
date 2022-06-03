@@ -10,11 +10,11 @@ import asyncio
 import json
 import logging
 
+from mmm.credential import Credential
 from mmm.datasource import OkexWsDatasource
-from mmm.order.executor import default_order_runner
+from mmm.order.executor import OrderExecutor
 from mmm.strategy.core.base import StrategyRunner
-from mmm.events import TradesEvent, OrderBookEvent
-from mmm.project_types import Exchange
+from mmm.events.event import TradesEvent, OrderBookEvent
 from mmm.strategy.core.base import Strategy
 from mmm.strategy.core.decorators import sub_event, timer
 
@@ -25,19 +25,18 @@ class JfdStrategy(Strategy):
     def on_ticker(self, ticker: TradesEvent):
         """"""
         print(ticker)
-        print('.' * 20)
+        print('.'*20)
 
     @sub_event(OrderBookEvent)
     def on_orderbook(self, order_book: OrderBookEvent):
         """"""
         print(order_book)
-        print('-' * 20)
+        print('-'*20)
 
     @timer(3)
     def schedule(self):
         from datetime import datetime
         print(datetime.now())
-        self.order_manager.create_market_order(Exchange.OKEX, usdt=100)
 
 
 if __name__ == '__main__':
@@ -53,8 +52,10 @@ if __name__ == '__main__':
         }]
     })
     OkexWsDatasource().subscribe(topic1)
-    StrategyRunner(JfdStrategy()).create_tasks()
-    default_order_runner.create_task()
+    credential = Credential.load_from_env()
+    StrategyRunner(JfdStrategy(credential)).create_tasks()
+    OrderExecutor().create_task()
     asyncio.get_event_loop().run_forever()
+
 
 ```
