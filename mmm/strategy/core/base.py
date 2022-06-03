@@ -56,7 +56,7 @@ class StrategyRunner:
         for interval, method_name in registry.items():
             loop = asyncio.get_event_loop()
             method = getattr(self.strategy, method_name)
-            loop.create_task(timer(interval, method), name=f'{self.strategy}-timer({interval})-task')
+            loop.create_task(timer(interval, method), name=f'task.{self.strategy}.timer({interval}.task')
 
     def create_listening_tasks(self):
         async def _create_task(e: "EventSource", c: Callable):

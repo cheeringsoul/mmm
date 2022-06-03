@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from mmm.credential import Credential
 from mmm.order.utils import OkexOrderIDGenerator
+from mmm.project_types import Order
 from mmm.third_party.okex.client import Client as OkexClient
 
 
@@ -29,7 +30,7 @@ class OkexOrderHandler(OrderHandler):
         # todo send order to exchange
         return client_order_id
 
-    def query_order(self, client_order_id, timeout):
+    def query_order(self, client_order_id, timeout) -> Order:
         # todo query order
         return client_order_id
 

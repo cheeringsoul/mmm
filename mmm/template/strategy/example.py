@@ -1,17 +1,10 @@
-import asyncio
-import json
-import logging
-
 from mmm.credential import Credential
-from mmm.datasource import OkexWsDatasource
-from mmm.order.executor import OrderExecutor
-from mmm.strategy.core.base import StrategyRunner
 from mmm.events.event import TradesEvent, OrderBookEvent
 from mmm.strategy.core.base import Strategy
 from mmm.strategy.core.decorators import sub_event, timer
 
 
-class JfdStrategy(Strategy):
+class GridStrategy(Strategy):
 
     @sub_event(TradesEvent)
     def on_ticker(self, ticker: TradesEvent):
@@ -31,23 +24,4 @@ class JfdStrategy(Strategy):
         print(datetime.now())
 
 
-strategy = JfdStrategy(Credential.load_from_env())
-
-#
-# if __name__ == '__main__':
-#     logging.basicConfig(level=logging.INFO)
-#     topic1 = json.dumps({
-#         "op": "subscribe",
-#         "args": [{
-#             "channel": "trades",
-#             "instId": "BTC-USDT"
-#         }, {
-#             "channel": "books",
-#             "instId": "BTC-USDT"
-#         }]
-#     })
-#     OkexWsDatasource().subscribe(topic1)
-#     credential = Credential.load_from_env()
-#     StrategyRunner(JfdStrategy(credential)).create_tasks()
-#     OrderExecutor().create_task()
-#     asyncio.get_event_loop().run_forever()
+strategy = GridStrategy(Credential.load_from_env())
