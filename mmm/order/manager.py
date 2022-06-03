@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from mmm.config import settings
 from mmm.events.event import OrderEvent
 from mmm.project_types import Order
-from mmm.schema import engine, Order as OrderModel
+from mmm.storage.sql.schema import engine, Order as OrderModel
 
 
 class OrderManager(metaclass=ABCMeta):

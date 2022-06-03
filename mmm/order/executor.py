@@ -8,7 +8,7 @@ from mmm.credential import Credential
 from mmm.events.event import OrderEvent
 from mmm.order.handler import OkexOrderHandler, OrderHandler, BinanceOrderHandler
 from mmm.project_types import Exchange, Order
-from mmm.schema import engine, Order as OrderModel
+from mmm.storage.sql.schema import engine, Order as OrderModel
 
 
 class OrderExecutor:
@@ -16,20 +16,20 @@ class OrderExecutor:
         self.event_source = settings.EVENT_SOURCE_CONF.get(OrderEvent)
         if self.event_source is None:
             logging.error('can not find a event source of OrderEvent.')
-        self.cached_executor = {}
+        self.cached_handler = {}
 
     def get_order_handler(self, exchange: "Exchange", credential: "Credential"):
-        executor = self.cached_executor.get(exchange, None)
+        executor = self.cached_handler.get(exchange, None)
         if executor is None:
             if exchange == Exchange.OKEX:
                 executor = OkexOrderHandler(credential)
             elif exchange == Exchange.BINANCE:
                 executor = BinanceOrderHandler(credential)
-        self.set_executor(exchange, executor)
+        self.set_handler(exchange, executor)
         return executor
 
-    def set_executor(self, exchange: "Exchange", executor: "OrderHandler"):
-        self.cached_executor[exchange] = executor
+    def set_handler(self, exchange: "Exchange", handler: "OrderHandler"):
+        self.cached_handler[exchange] = handler
 
     def save(self, uniq_id: str, order: "Order"):
         order_model = OrderModel(uniq_id=uniq_id,
