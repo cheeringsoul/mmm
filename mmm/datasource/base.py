@@ -1,4 +1,4 @@
-from mmm.events import Parser
+from mmm.events.parser import Parser
 
 
 class ParserFactory:

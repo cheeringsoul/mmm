@@ -2,7 +2,6 @@ import logging
 from abc import ABCMeta, abstractmethod
 
 from mmm.config import settings
-from mmm.events import EventSource
 from mmm.events.event import OrderEvent
 
 
@@ -17,7 +16,7 @@ class OrderManager(metaclass=ABCMeta):
 class DefaultOrderManager(OrderManager):
     def __init__(self):
         event_source_conf = settings.EVENT_SOURCE_CONF
-        self.event_source: "EventSource" or None = event_source_conf.get(OrderEvent)
+        self.event_source: dict or None = event_source_conf.get(OrderEvent)
         if self.event_source is None:
             raise RuntimeError('OrderEvent事件源未配置！')
 

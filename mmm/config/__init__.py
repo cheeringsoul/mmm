@@ -9,8 +9,7 @@ empty = object()
 
 class Settings:
     def __init__(self, settings_module):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        default_config = os.path.join(dir_path, 'default_config.py')
+        default_config = 'mmm.config.default_config'
         self._set_config(default_config)
         self._set_config(settings_module)
 

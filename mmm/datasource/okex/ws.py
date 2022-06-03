@@ -4,7 +4,8 @@ import asyncio
 import websockets
 
 from .parser import ParserFactory, parser_factory
-from mmm.events import default_dispatcher, Event
+from mmm.events.event import Event
+from mmm.events.dispatcher import dispatcher
 
 
 class CollectionError(Exception):

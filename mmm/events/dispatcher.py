@@ -1,14 +1,13 @@
 import asyncio.queues
 import logging
-
-from .event import Event
-from .event_source import default_event_source_conf, EventSourceConfig
+from mmm.config import settings
+from mmm.events.event import Event
 
 
 class Dispatcher:
 
-    def __init__(self, event_source_conf: EventSourceConfig = default_event_source_conf):
-        self.event_source_conf = event_source_conf
+    def __init__(self):
+        self.event_source_conf = settings.EVENT_SOURCE_CONF
 
     async def dispatch(self, event: "Event"):
         event_source = self.event_source_conf.get(type(event))
@@ -20,4 +19,4 @@ class Dispatcher:
             logging.error(event)
 
 
-default_dispatcher = Dispatcher()
+dispatcher = Dispatcher()

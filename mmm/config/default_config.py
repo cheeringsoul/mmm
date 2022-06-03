@@ -1,7 +1,6 @@
 from asyncio import Queue
 
-from mmm.events import Event, TradesEvent, OrderBookEvent
-from mmm.events.event import BarEvent, OrderEvent
+from mmm.events.event import BarEvent, OrderEvent, Event, TradesEvent, OrderBookEvent
 from mmm.events.event_source import AsyncioQueueEventSource
 from mmm.order.manager import DefaultOrderManager
 

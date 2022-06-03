@@ -4,8 +4,7 @@ from decimal import Decimal
 from typing import Dict, List
 
 from mmm.datasource.base import ParserFactory
-from mmm.events import TradesEvent, OrderBookEvent, Event
-from mmm.events.event import BarEvent
+from mmm.events.event import BarEvent, TradesEvent, OrderBookEvent, Event
 from mmm.events.parser import Parser
 
 
