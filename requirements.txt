@@ -3,3 +3,8 @@ frozendict~=2.2.1
 PyYAML~=6.0
 requests~=2.27.1
 pickleshare==0.7.5
+Jinja2~=3.0.3
+aiohttp~=3.8.0
+dateparser~=1.1.0
+pytz~=2021.3
+setuptools~=58.3.0

@@ -12,7 +12,7 @@ class OrderExecutor:
     def __init__(self):
         self.event_source = settings.EVENT_SOURCE_CONF.get(OrderEvent)
         if self.event_source is None:
-            logging.error('OrderEvent没有对应的事件源')
+            logging.error('can not find a event source of OrderEvent.')
         self.cached_executor = {}
 
     def get_order_executor(self, exchange: "Exchange", credential: "Credential"):

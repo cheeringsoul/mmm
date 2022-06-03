@@ -6,12 +6,11 @@ from mmm.events.event import Event
 
 def timer(interval: int):
     """
-    定时任务
-    :param interval: 时间间隔，单位：秒
+    :param interval: seconds
     :return:
     """
     if not isinstance(interval, int):
-        raise TypeError(f'参数interval必须是整数')
+        raise TypeError(f'interval must be int')
 
     def new_func(func):
         @wraps(func)
@@ -24,7 +23,7 @@ def timer(interval: int):
 
 def sub_event(event: Type[Event]):
     if not issubclass(event, Event):
-        raise TypeError(f'sub_event参数必须是Event类型')
+        raise TypeError(f'event must be type of Event.')
 
     def new_func(func):
         @wraps(func)

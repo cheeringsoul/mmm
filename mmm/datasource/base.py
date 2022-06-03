@@ -10,7 +10,7 @@ class ParserFactory:
             if channel.startswith(key):
                 return self.__registry__[key]
         else:
-            raise RuntimeError(f'{channel}事件找不到对应消息解析器')
+            raise RuntimeError(f'can not find a message parser of {channel}')
 
     def register(self, channel: str, parser: "Parser"):
         self.__registry__[channel] = parser

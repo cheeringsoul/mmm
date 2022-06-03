@@ -2,5 +2,5 @@ from enum import Enum
 
 
 class StrategyStatus(Enum):
-    OPENED = 1  # 已开仓
-    EMPTY = 2  # 空仓
+    OPENED = 1  # already opened a position
+    SHORT = 2  # short position

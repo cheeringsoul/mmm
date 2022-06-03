@@ -71,7 +71,7 @@ class StrategyRunner:
         for event_type, method_name in registry.items():
             event_source = self.event_source_conf.get(event_type)
             if event_source is None:
-                logging.error(f'{event_type}没有对应的事件源')
+                logging.error(f'can not find event source of {event_type}.')
             loop = asyncio.get_event_loop()
             method = getattr(self.strategy, method_name)
             loop.create_task(_create_task(event_source, method), name=f'{self.strategy}-wait-for-{event_type}-task')

@@ -17,11 +17,11 @@ class DefaultOrderManager(OrderManager):
     def __init__(self):
         self.event_source = settings.EVENT_SOURCE_CONF.get(OrderEvent)
         if self.event_source is None:
-            raise RuntimeError('OrderEvent事件源未配置！')
+            raise RuntimeError('can not find event source of OrderEvent.')
 
     def create_order(self, order_event: "OrderEvent"):
-        logging.info(f'下单：订单类型{order_event.order_type}, 参数: {order_event.params}')
+        logging.info(f'create order, order type :{order_event.order_type}, params: {order_event.params}')
         self.event_source.put_nowait(order_event)
 
     def query_order(self, uniq_id):
-        ''''''
+        """"""

@@ -12,7 +12,7 @@ class Dispatcher:
     async def dispatch(self, event: "Event"):
         event_source = self.event_source_conf.get(type(event))
         if event_source is None:
-            raise RuntimeError(f'{event}找不到对应的事件源')
+            raise RuntimeError(f'can not find event source of type {event}')
         try:
             event_source.put_nowait(event)
         except asyncio.queues.QueueFull:

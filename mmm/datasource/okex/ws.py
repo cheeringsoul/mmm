@@ -28,7 +28,7 @@ class OkexWsDatasource:
         self.received_pong = False
         await asyncio.sleep(self.__ping_interval__)
         if not self.received_pong:
-            raise CollectionError('未收到pong')
+            raise CollectionError('looking forward a pong message, but not received.')
 
     def subscribe(self, topic: str):
         async def create_task():
@@ -36,10 +36,10 @@ class OkexWsDatasource:
                 try:
                     await self._do_subscribe(topic)
                 except CollectionError as e:
-                    logging.exception("未收到pong", exc_info=e)
+                    logging.exception("looking forward a pong message, but not received.", exc_info=e)
                 except Exception as e:
                     logging.exception(e)
-                    logging.info('即将重新连接')
+                    logging.info('reconnecting...')
         loop = asyncio.get_event_loop()
         loop.create_task(create_task(), name=f'okex-ws-sub-{topic}')
 
@@ -54,14 +54,14 @@ class OkexWsDatasource:
                 try:
                     msg = await ws.recv()
                     if msg == 'pong':
-                        logging.info('收到pong')
+                        logging.info('received a pong message')
                         self.received_pong = True
                     else:
                         msg = json.loads(msg)
                         if msg.get('event') == 'subscribe':
-                            logging.info(f'订阅{topic}成功')
+                            logging.info(f'subscribe {topic} successfully')
                         elif msg.get('event') == 'error':
-                            logging.error(f'订阅{topic}失败, {msg}')
+                            logging.error(f'subscribe {topic} failed, {msg}')
                         else:
                             channel = msg['arg']['channel']
                             event = self.parser_factory.get(channel).parse(msg)
