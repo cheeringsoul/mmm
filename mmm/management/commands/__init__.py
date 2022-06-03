@@ -17,7 +17,6 @@ if __name__ == '__main__':
     os.mkdir(os.path.join(location, name))
     rv = Template(tpl).render(project_name_upper=name.upper(), project_name=name)
     f = os.path.join(location, name, 'manage.py')
-    print(f)
     with open(f, 'w') as f:
         f.write(rv)
 
