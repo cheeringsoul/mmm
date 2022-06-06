@@ -1,12 +1,16 @@
 import asyncio
 import logging
 
+from copy import deepcopy
+from typing import List
+
 from sqlalchemy.orm import Session
 
 from mmm.config import settings
 from mmm.credential import Credential
 from mmm.events.event import OrderEvent
 from mmm.order.handler import OkexOrderHandler, OrderHandler, BinanceOrderHandler
+from mmm.order.middleware import MiddleWare
 from mmm.project_types import Exchange, Order
 from mmm.storage.sql.schema import engine, Order as OrderModel
 
@@ -17,6 +21,7 @@ class OrderExecutor:
         if self.event_source is None:
             logging.error('can not find a event source of OrderEvent.')
         self.cached_handler = {}
+        self.middlewares: List["MiddleWare"] = []
 
     def get_order_handler(self, exchange: "Exchange", credential: "Credential"):
         executor = self.cached_handler.get(exchange, None)
@@ -48,6 +53,10 @@ class OrderExecutor:
             session.commit()
 
     async def on_order_event(self, order_event: "OrderEvent"):
+        c = deepcopy(order_event)
+        for each in self.middlewares:
+            if not each.check(c):
+                logging.error(f"order_event is not permitted for the reason of: {}")
         order_handler = self.get_order_handler(order_event.exchange, order_event.credential)
         loop = asyncio.get_running_loop()
         client_order_id = await loop.run_in_executor(None, lambda: order_handler.create_order(order_event))
