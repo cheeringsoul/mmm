@@ -54,9 +54,12 @@ class OrderExecutor:
 
     async def on_order_event(self, order_event: "OrderEvent"):
         c = deepcopy(order_event)
-        for each in self.middlewares:
-            if not each.check(c):
-                logging.error(f"order_event is not permitted for the reason of: {}")
+        for middleware in self.middlewares:
+            rv, reason = middleware.check(c)
+            if not rv:
+                logging.error(f"order_event {order_event} is not permitted for the reason of {reason}")
+                return
+
         order_handler = self.get_order_handler(order_event.exchange, order_event.credential)
         loop = asyncio.get_running_loop()
         client_order_id = await loop.run_in_executor(None, lambda: order_handler.create_order(order_event))

@@ -7,5 +7,5 @@ class MiddleWare(metaclass=ABCMeta):
 
 
 class CoinFilter(MiddleWare):
-    def check(self, order_event: "OrderEvent") -> bool:
-        return True
+    def check(self, order_event: "OrderEvent"):
+        return True, ''
