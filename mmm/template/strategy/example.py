@@ -22,4 +22,4 @@ class GridStrategy(Strategy):
         print(datetime.now())
 
 
-strategy = GridStrategy(Credential.load_from_env())
+strategy = GridStrategy(bot_id='bot.123', credential=Credential.load_from_env())
