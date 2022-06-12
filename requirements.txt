@@ -13,3 +13,5 @@ SQLAlchemy==1.4.37
 SQLAlchemy-Utils==0.38.2
 urllib3==1.26.9
 websockets==10.1
+Flask==2.1.2
+setuptools==59.5.0
