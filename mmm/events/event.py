@@ -54,8 +54,8 @@ class OrderBookEvent(Event):
 
 class BarEvent(Event):
 
-    def __init__(self, bar_type: str, inst_id: str, ts: datetime, open_price: Decimal, high_price: Decimal, low_price: Decimal,
-                 close_price: Decimal, volume: Decimal, volume_ccy: Decimal, origin_data: Dict):
+    def __init__(self, bar_type: str, inst_id: str, ts: datetime, open_price: Decimal, high_price: Decimal,
+                 low_price: Decimal, close_price: Decimal, volume: Decimal, volume_ccy: Decimal, origin_data: Dict):
         """
         :param volume: 交易量，以张为单位, 如果是衍生品合约，数值为合约的张数。如果是币币/币币杠杆，数值为交易货币的数量。
         :param volume_ccy: 交易量，以币为单位 如果是衍生品合约，数值为交易货币的数量。如果是币币/币币杠杆，数值为计价货币的数量。
@@ -73,12 +73,12 @@ class BarEvent(Event):
 
 
 class OrderEvent(Event):
-    def __init__(self, uniq_id: str, strategy_name: str, strategy_bot_id: str, exchange: "Exchange",
+    def __init__(self, uniq_id: str, strategy_name: str, bot_id: str, exchange: "Exchange",
                  credential: "Credential", params: dict):
         super(OrderEvent, self).__init__(clear(locals(), 'self'))
         self.uniq_id: str = uniq_id
         self.strategy_name: str = strategy_name
-        self.strategy_bot_id: str = strategy_bot_id
+        self.bot_id: str = bot_id
         self.exchange: "Exchange" = exchange
         self.credential: "Credential" = credential
         self.params: dict = params

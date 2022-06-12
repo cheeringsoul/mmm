@@ -43,7 +43,7 @@ class OkexOrderHandler(OrderHandler):
             uniq_id=order_event.uniq_id,
             exchange=order_event.exchange,
             strategy_name=order_event.strategy_name,
-            strategy_bot_id=order_event.strategy_bot_id,
+            strategy_bot_id=order_event.bot_id,
             client_order_id=client_order_id,
             order_params=order_event.params,
             status=OrderStatus.CREATED

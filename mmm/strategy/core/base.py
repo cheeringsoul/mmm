@@ -34,20 +34,17 @@ class Strategy(metaclass=StrategyMeta):
     __event_registry__: Dict[Type[Event], str] = {}
     __timer_registry__: Dict[int, str] = {}
 
-    def __init__(self, uniq_id: str, credential: "Credential", order_manager=None):
-        self._bot_id = uniq_id  # a unique id represent for the strategy instance
+    def __init__(self, bot_id: str, credential: "Credential", order_manager=None):
+        self.bot_id = bot_id  # a unique id represent for the strategy bot
         self.credential = credential
         self.order_manager: OrderManager = order_manager or DefaultOrderManager()
-
-    def get_bot_id(self) -> str:
-        return self._bot_id
 
     @classmethod
     def get_strategy_name(cls):
         return f"{cls.__module__}.{cls.__name__}"
 
     def __repr__(self):
-        return f'strategy.{self.get_bot_id()}'
+        return f'strategy.{self.get_strategy_name()}'
 
 
 class StrategyRunner:

@@ -10,13 +10,13 @@ class Asset:
     amount: Decimal
 
 
-class OrderType(Enum):
-    MARKET = 1  # Market order
-    LIMIT = 2  # Limit order
-    POST_ONLY = 3  # Post only order
-    FOK = 4  # Fill - or -kill order
-    IOC = 5  # Immediate - or -cancel order
-    OPTIMAL_LIMIT_IOC = 6  # Market Order with immediate - or -cancel order (applicable only to Futures and Perpetual swap).
+# class OrderType(Enum):
+#     MARKET = 1  # Market order
+#     LIMIT = 2  # Limit order
+#     POST_ONLY = 3  # Post only order
+#     FOK = 4  # Fill - or -kill order
+#     IOC = 5  # Immediate - or -cancel order
+#     OPTIMAL_LIMIT_IOC = 6  # Market Order with immediate - or -cancel order (applicable only to Futures and Perpetual swap).
 
 
 class Exchange(Enum):
