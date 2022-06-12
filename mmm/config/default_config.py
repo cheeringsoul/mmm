@@ -12,4 +12,7 @@ EVENT_SOURCE_CONF = {  # event source config
     OrderEvent: AsyncioQueueEventSource(Queue())
 }
 
-DATABASE = 'sqlite:///mmm.db'
+DATABASE = {
+    'type': 'sql',
+    'uri': 'sqlite:///mmm.db'
+}

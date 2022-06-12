@@ -4,6 +4,9 @@ from mmm.config import settings
 from mmm.events.event import Event
 
 
+logger = logging.getLogger(__name__)
+
+
 class Dispatcher:
 
     def __init__(self):
@@ -16,4 +19,4 @@ class Dispatcher:
         try:
             event_source.put_nowait(event)
         except asyncio.queues.QueueFull:
-            logging.error(event)
+            logger.error(event)

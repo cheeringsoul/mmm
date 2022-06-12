@@ -51,7 +51,7 @@ class TradeAPI(Client):
         return self._request_with_params(POST, CLOSE_POSITION, params)
 
     # Get Order Details
-    def get_orders(self, inst_id, ord_id=None, cl_ord_id=None):
+    def get_orders(self, inst_id, cl_ord_id=None, ord_id=None):
         params = {'instId': inst_id, 'ordId': ord_id, 'clOrdId': cl_ord_id}
         return self._request_with_params(GET, ORDER_INFO, params)
 

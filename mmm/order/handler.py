@@ -1,7 +1,18 @@
+import asyncio
+import json
+import logging
+
+import websockets
 from abc import ABC, abstractmethod
 from mmm.credential import Credential
-from mmm.project_types import Order
+from mmm.events.event import OrderEvent
+from mmm.exceptions import CreateOrderError
+from mmm.project_types import OrderResult, OrderStatus
 from mmm.third_party.okex.client import Client as OkexClient
+from mmm.third_party.okex.trade_api import TradeAPI as OkexTradeAPI
+
+
+logger = logging.getLogger(__name__)
 
 
 class OrderHandler(ABC):
@@ -9,49 +20,77 @@ class OrderHandler(ABC):
         self.credential = credential
 
     @abstractmethod
-    def create_order(self, *args, **kwargs):
+    async def create_order(self, order_event: "OrderEvent"):
         pass
 
     @abstractmethod
-    def query_order(self, client_order_id, timeout):
+    def query_order(self, *args, **kwargs):
         pass
 
 
 class OkexOrderHandler(OrderHandler):
 
-    def __init__(self, credential: Credential):
+    def __init__(self, credential: "Credential"):
+        self.ws_uri = 'wss://ws.okx.com:8443/ws/v5/private'
         super().__init__(credential)
         self.client = OkexClient(credential.api_key, credential.secret_key, credential.phrase)
+        self.trade_client = OkexTradeAPI(credential.api_key, credential.secret_key, credential.phrase)
 
-    def create_order(self, **kwargs):
-        # todo send order to exchange
-        """
-        async def hello():
-            async with websockets.connect('ws://localhost:8765') as websocket:
-                name = input("What's your name? ")
+    async def create_order(self, order_event: "OrderEvent") -> "OrderResult":
+        client_order_id = order_event.params['clOrdId']
+        inst_id = order_event.params['instId']
+        result = OrderResult(
+            uniq_id=order_event.uniq_id,
+            exchange=order_event.exchange,
+            strategy_name=order_event.strategy_name,
+            strategy_bot_id=order_event.strategy_bot_id,
+            client_order_id=client_order_id,
+            order_params=order_event.params,
+            status=OrderStatus.CREATED
+        )
+        try:
+            async with websockets.connect(self.ws_uri) as websocket:
+                params = json.dumps(order_event.params)
+                await websocket.send(params)
+                rv = await websocket.recv()
+                resp = json.loads(rv)
+                if resp['code'] != '0':
+                    result.status = OrderStatus.FAILED
+                    result.msg = f"create order error, params: {params}, error code: {resp['code']}," \
+                                 f" error msg: {resp['msg']}"
+                else:
+                    rv = await self.query_order(inst_id, client_order_id)
+                    if rv.get('code') != '0':
+                        result.status = OrderStatus.FAILED
+                        result.msg = f"create order error, params: {params}, error code: {resp['code']}," \
+                                     f" error msg: {resp['msg']}"
+                    else:
+                        order_id = resp['data'][0]['orderId']
+                        result.order_id = order_id
+                        result.status = OrderStatus.SUCCESS
+                        result.raw_data = resp['data']
+        except Exception as e:
+            err = f"create order error, params: {params}, exception: {e}"
+            logger.error(err)
+            result.status = OrderStatus.FAILED
+            result.msg = err
+        finally:
+            return result
 
-                await websocket.send(name)
-                print(f"> {name}")
+    async def create_batch_order(self):
+        ...
 
-                greeting = await websocket.recv()
-                print(f"< {greeting}")
-        asyncio.get_event_loop().run_until_complete(hello())
-
-        """
-        client_order_id = kwargs['clOrdId']
-        return client_order_id
-
-    def query_order(self, client_order_id, timeout) -> Order:
-        # todo query order
-        return client_order_id
+    async def query_order(self, inst_id, client_order_id):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self.trade_client.get_orders, client_order_id)
 
 
 class BinanceOrderHandler(OrderHandler):
 
-    def __init__(self, credential: Credential):
+    def __init__(self, credential: "Credential"):
         super().__init__(credential)
 
-    def create_order(self, *args, **kwargs):
+    async def create_order(self, *args, **kwargs):
         pass
 
     def query_order(self, client_order_id, timeout):

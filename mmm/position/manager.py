@@ -5,6 +5,9 @@ from mmm.position.utils import get_price
 from mmm.project_types import Asset
 
 
+logger = logging.getLogger(__name__)
+
+
 class StrategyPosition:
 
     def __init__(self, assets: List[Asset]):
@@ -34,7 +37,7 @@ class StrategyPosition:
                 each.amount -= asset.amount
                 break
         else:
-            logging.error(f"{asset.inst_id} not available.")
+            logger.error(f"{asset.inst_id} not available.")
 
     def get_asset(self, inst_id: str) -> Asset or None:
         for each in self._assets:

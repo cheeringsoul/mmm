@@ -2,7 +2,7 @@ import urllib.parse
 
 import requests
 import json
-from . import consts as c, utils, exceptions
+from mmm.third_party.okex import consts as c, utils, exceptions
 
 
 class Client(object):

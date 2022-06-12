@@ -8,6 +8,9 @@ from mmm.events.event import Event
 from mmm.events.dispatcher import Dispatcher
 
 
+logger = logging.getLogger(__name__)
+
+
 class CollectionError(Exception):
     """"""
 
@@ -23,7 +26,7 @@ class OkexWsDatasource:
 
     async def ping(self, ws):
         await asyncio.sleep(self.__ping_interval__)
-        logging.info('发送ping')
+        logger.info('send a ping')
         await ws.send("ping")
         self.received_pong = False
         await asyncio.sleep(self.__ping_interval__)
@@ -36,10 +39,10 @@ class OkexWsDatasource:
                 try:
                     await self._do_subscribe(topic)
                 except CollectionError as e:
-                    logging.exception("looking forward a pong message, but not received.", exc_info=e)
+                    logger.exception("looking forward a pong message, but not received.", exc_info=e)
                 except Exception as e:
-                    logging.exception(e)
-                    logging.info('reconnecting...')
+                    logger.exception(e)
+                    logger.info('reconnecting...')
         loop = asyncio.get_event_loop()
         loop.create_task(create_task(), name=f'task.okex.ws.sub.{topic}')
 
@@ -54,14 +57,14 @@ class OkexWsDatasource:
                 try:
                     msg = await ws.recv()
                     if msg == 'pong':
-                        logging.info('received a pong message')
+                        logger.info('received a pong message')
                         self.received_pong = True
                     else:
                         msg = json.loads(msg)
                         if msg.get('event') == 'subscribe':
-                            logging.info(f'subscribe {topic} successfully')
+                            logger.info(f'subscribe {topic} successfully')
                         elif msg.get('event') == 'error':
-                            logging.error(f'subscribe {topic} failed, {msg}')
+                            logger.error(f'subscribe {topic} failed, {msg}')
                         else:
                             channel = msg['arg']['channel']
                             event = self.parser_factory.get(channel).parse(msg)
@@ -73,5 +76,5 @@ class OkexWsDatasource:
                     ping.cancel()
                     ping = asyncio.create_task(self.ping(ws))
                 except Exception as e:
-                    logging.exception(e)
+                    logger.exception(e)
                     break

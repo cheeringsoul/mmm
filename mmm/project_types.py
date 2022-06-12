@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
+from typing import Optional
 
 
 @dataclass
@@ -24,15 +25,23 @@ class Exchange(Enum):
     ...
 
 
+class OrderStatus(Enum):
+    CREATED = 0
+    SUCCESS = 1
+    FAILED = 2
+
+
 @dataclass
-class Order:
+class OrderResult:
+    uniq_id: str
     exchange: "Exchange"
-    order_id: str
+    strategy_name: str
+    strategy_bot_id: str
     client_order_id: str
-    instrument_id: str
-    currency: str
-    order_type: "OrderType"
-    side: str
-    avg_price: Decimal
-    turnover: Decimal
-    volume: Decimal
+    order_params: dict
+    status: "OrderStatus"
+    order_id: str = ''
+    msg: str = ''
+    raw_data: Optional[dict] = None
+
+

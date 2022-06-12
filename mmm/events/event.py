@@ -73,10 +73,12 @@ class BarEvent(Event):
 
 
 class OrderEvent(Event):
-    """订单相关事件"""
-    def __init__(self, uniq_id: str, exchange: "Exchange", credential: "Credential", params: dict):
+    def __init__(self, uniq_id: str, strategy_name: str, strategy_bot_id: str, exchange: "Exchange",
+                 credential: "Credential", params: dict):
         super(OrderEvent, self).__init__(clear(locals(), 'self'))
         self.uniq_id: str = uniq_id
+        self.strategy_name: str = strategy_name
+        self.strategy_bot_id: str = strategy_bot_id
         self.exchange: "Exchange" = exchange
         self.credential: "Credential" = credential
         self.params: dict = params
