@@ -36,7 +36,7 @@ class OkexOrderHandler(OrderHandler):
         self.client = OkexClient(credential.api_key, credential.secret_key, credential.phrase)
         self.trade_client = OkexTradeAPI(credential.api_key, credential.secret_key, credential.phrase)
 
-    async def create_order(self, order_event: "OrderEvent") -> "OrderResult":
+    async def create_order(self, order_event: "OrderEvent", timeout=8) -> "OrderResult":
         client_order_id = order_event.params['clOrdId']
         inst_id = order_event.params['instId']
         result = OrderResult(
@@ -69,7 +69,7 @@ class OkexOrderHandler(OrderHandler):
                         result.order_id = order_id
                         result.status = OrderStatus.SUCCESS
                         result.raw_data = resp['data']
-        except Exception as e:
+        except (asyncio.TimeoutError, Exception) as e:
             err = f"create order error, params: {params}, exception: {e}"
             logger.error(err)
             result.status = OrderStatus.FAILED
@@ -80,9 +80,10 @@ class OkexOrderHandler(OrderHandler):
     async def create_batch_order(self):
         ...
 
-    async def query_order(self, inst_id, client_order_id):
+    async def query_order(self, inst_id, client_order_id, timeout):
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self.trade_client.get_orders, client_order_id)
+        future = loop.run_in_executor(None, self.trade_client.get_orders, client_order_id)
+        return await asyncio.wait_for(future, timeout=timeout, loop=loop)
 
 
 class BinanceOrderHandler(OrderHandler):

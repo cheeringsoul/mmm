@@ -12,10 +12,13 @@ from mmm.schema.impl import default_storage
 
 class OrderManager(metaclass=ABCMeta):
     @abstractmethod
-    def create_order(self, *args, **kwargs): ...
+    def create_order(self, order_event: "OrderEvent"): ...
 
     @abstractmethod
-    def query_order(self, *args, **kwargs): ...
+    def query_order(self, uniq_id): ...
+
+    @abstractmethod
+    async def query_order_async(self, uniq_id, timeout=8): ...
 
 
 class DefaultOrderManager(OrderManager):
@@ -29,5 +32,10 @@ class DefaultOrderManager(OrderManager):
         logging.info(f'create order, order_event :{order_event}')
         self.event_source.put_nowait(order_event)
 
-    def query_order(self, uniq_id, timeout=8) -> Optional[OrderResult]:
+    def query_order(self, uniq_id) -> Optional[OrderResult]:
         return self.storage.query_order(uniq_id)
+
+    async def query_order_async(self, uniq_id, timeout=8):
+        loop = asyncio.get_running_loop()
+        future = loop.run_in_executor(None, self.query_order, uniq_id)
+        return await asyncio.wait_for(future, timeout=timeout, loop=loop)

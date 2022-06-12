@@ -17,6 +17,8 @@ class StrategyMeta(type):
         timer_registry = {}
         for method_name, method in kwargs.items():
             e = getattr(method, '__sub_event__', None)
+            if e in event_registry.keys():
+                raise RuntimeError(f"You can not sub {e.__name__} twice with different handler.")
             if e is not None:
                 event_registry[e] = method_name
             interval = getattr(method, '__timer_interval__', None)
