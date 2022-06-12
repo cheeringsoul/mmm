@@ -42,7 +42,7 @@ def start_admin(host, port):
 
 @click.command()
 def init_database():
-    from mmm.storage.impl.sql import engine, Base
+    from mmm.schema.models import engine, Base
     from sqlalchemy_utils import database_exists, create_database
 
     if not database_exists(engine.url):
