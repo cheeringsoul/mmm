@@ -21,7 +21,7 @@ class Mixin:
 
 
 class Order(Base, Mixin):
-    __table_name__ = 'order'
+    __tablename__ = 'order'
 
     uniq_id = Column(String(64), unique=True, nullable=False, doc='exchange name')
     strategy_bot_id = Column(String(128), unique=True, doc='table strategy_bot column strategy_bot_id')

@@ -1,5 +1,0 @@
-init_assets:  # 初始资金
-    USDT: 10000
-    BTC: 1
-
-max_loss: 0.1 # 最大止损

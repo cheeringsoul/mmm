@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from mmm.events.event import Event
+from mmm.core.events.event import Event
 
 
 class Parser(ABC):

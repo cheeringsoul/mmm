@@ -1,10 +1,9 @@
 import logging
 
-from abc import ABCMeta, abstractmethod
 from typing import Optional
 
-from mmm.schema import Storage
-from mmm.schema.models import Order, engine
+from mmm.core.schema import Storage
+from mmm.core.schema.models import Order, engine
 from sqlalchemy.orm import Session
 
 from mmm.project_types import OrderResult, Exchange, OrderStatus

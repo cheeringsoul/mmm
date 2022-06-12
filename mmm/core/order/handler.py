@@ -5,8 +5,7 @@ import logging
 import websockets
 from abc import ABC, abstractmethod
 from mmm.credential import Credential
-from mmm.events.event import OrderEvent
-from mmm.exceptions import CreateOrderError
+from mmm.core.events.event import OrderEvent
 from mmm.project_types import OrderResult, OrderStatus
 from mmm.third_party.okex.client import Client as OkexClient
 from mmm.third_party.okex.trade_api import TradeAPI as OkexTradeAPI

@@ -4,11 +4,13 @@ import logging
 
 from mmm.config import settings
 from mmm.credential import Credential
-from mmm.events.event import Event
-from mmm.events.event_source import EventSource
-from mmm.order.manager import OrderManager, DefaultOrderManager
+from mmm.core.events.event import Event, OrderEvent
+from mmm.core.events.event_source import EventSource
+from mmm.core.order.manager import OrderManager, DefaultOrderManager
 
 from typing import Type, Dict, Callable
+
+from mmm.project_types import Exchange
 
 
 class StrategyMeta(type):
@@ -42,6 +44,27 @@ class Strategy(metaclass=StrategyMeta):
     @classmethod
     def get_strategy_name(cls):
         return f"{cls.__module__}.{cls.__name__}"
+
+    def create_order(self, uniq_id: str, exchange: "Exchange", params):
+        """
+        :param uniq_id: an unique id represent for this request
+        :param exchange: such as okex, binance
+        :param params: params that exchange api required
+        :return:
+        """
+        uniq_id, self.get_strategy_name(), self.bot_id, exchange, self.credential, params
+        event = OrderEvent(
+            uniq_id=uniq_id,
+            strategy_name=self.get_strategy_name(),
+            bot_id=self.bot_id,
+            exchange=exchange,
+            credential=self.credential,
+            params=params
+        )
+        self.order_manager.create_order(event)
+
+    def create_batch_order(self):
+        ...
 
     def __repr__(self):
         return f'strategy.{self.get_strategy_name()}'

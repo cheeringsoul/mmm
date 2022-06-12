@@ -8,7 +8,7 @@ def cli(): ...
 
 @click.command()
 def start_order_executor():
-    from mmm.order.executor import OrderExecutor
+    from mmm.core.order.executor import OrderExecutor
 
     OrderExecutor().create_task()
     asyncio.get_event_loop().run_forever()
@@ -18,7 +18,7 @@ def start_order_executor():
 @click.option('--names', '-n', required=True, type=click.Choice(['okex', 'binance']), multiple=True)
 @click.option('--topic', '-t', required=True, type=str)
 def start_data_source(name, topic):
-    from mmm.datasource import OkexWsDatasource
+    from mmm.core.datasource import OkexWsDatasource
 
     if name == 'okex':
         OkexWsDatasource().subscribe(topic)
@@ -42,8 +42,8 @@ def start_admin(host, port):
 
 @click.command()
 def init_database():
-    from mmm.schema.models import engine, Base
     from sqlalchemy_utils import database_exists, create_database
+    from mmm.core.schema.models import engine, Base
 
     if not database_exists(engine.url):
         create_database(engine.url)

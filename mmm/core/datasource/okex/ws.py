@@ -4,8 +4,8 @@ import asyncio
 import websockets
 
 from .parser import ParserFactory, parser_factory
-from mmm.events.event import Event
-from mmm.events.dispatcher import Dispatcher
+from mmm.core.events.event import Event
+from mmm.core.events.dispatcher import Dispatcher
 
 
 logger = logging.getLogger(__name__)

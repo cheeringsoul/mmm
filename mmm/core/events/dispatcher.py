@@ -1,7 +1,7 @@
 import asyncio.queues
 import logging
 from mmm.config import settings
-from mmm.events.event import Event
+from mmm.core.events.event import Event
 
 
 logger = logging.getLogger(__name__)

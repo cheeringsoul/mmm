@@ -29,8 +29,7 @@ from mmm.management.command import cli
 
 
 if __name__ == '__main__':
-    profile = os.environ.get('{{ name_upper }}_PROFILE', 'develop')
-    os.environ.setdefault('MMM_SETTINGS_MODULE', 'settings.{profile}')
+    os.environ.get('MMM_SETTINGS_MODULE', 'settings')
     cli()
 
 """

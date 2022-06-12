@@ -1,7 +1,9 @@
+import inspect
+
 from functools import wraps
 from typing import Type
 
-from mmm.events.event import Event
+from mmm.core.events.event import Event
 
 
 def timer(interval: int):
@@ -26,9 +28,16 @@ def sub_event(event: Type[Event]):
         raise TypeError(f'event must be type of Event.')
 
     def new_func(func):
-        @wraps(func)
-        def wrap_func(self, event_data):
-            return func(self, event_data)
-        wrap_func.__sub_event__ = event
-        return wrap_func
+        if inspect.iscoroutinefunction(func):
+            @wraps(func)
+            async def wrap_func(self, event_data):
+                return await func(self, event_data)
+            wrap_func.__sub_event__ = event
+            return wrap_func
+        else:
+            @wraps(func)
+            def wrap_func(self, event_data):
+                return func(self, event_data)
+            wrap_func.__sub_event__ = event
+            return wrap_func
     return new_func

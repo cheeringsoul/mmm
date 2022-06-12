@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from mmm.events.event import OrderEvent
+from mmm.core.events.event import OrderEvent
 
 
 class Filter(metaclass=ABCMeta):

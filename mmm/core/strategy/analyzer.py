@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from mmm.strategy.signals import StrategySignal
+from mmm.core.strategy.signals import StrategySignal
 
 
 class Analyzer(metaclass=ABCMeta):

@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from mmm.position.utils import get_price
+from mmm.tools import get_price
 from mmm.project_types import Asset
 
 

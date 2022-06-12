@@ -6,11 +6,11 @@ from typing import List
 
 from mmm.config import settings
 from mmm.credential import Credential
-from mmm.events.event import OrderEvent
-from mmm.order.handler import OkexOrderHandler, OrderHandler, BinanceOrderHandler
-from mmm.order.filter import Filter
+from mmm.core.events.event import OrderEvent
+from mmm.core.order.handler import OkexOrderHandler, OrderHandler, BinanceOrderHandler
+from mmm.core.order.filter import Filter
 from mmm.project_types import Exchange
-from mmm.schema.impl import Storage, default_storage
+from mmm.core.schema.impl import Storage, default_storage
 
 logger = logging.getLogger(__name__)
 

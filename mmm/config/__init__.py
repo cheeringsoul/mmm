@@ -25,15 +25,6 @@ class Settings:
 
 
 class LazySettings:
-    """
-    setting example:
-
-    DATABASE = {
-        'type': 'sqlite'
-        'db_path': '/tmp/mmm.db'
-    }
-
-    """
     def __init__(self):
         self._wrapped = empty
 

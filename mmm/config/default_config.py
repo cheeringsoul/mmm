@@ -1,7 +1,7 @@
 from asyncio import Queue
 
-from mmm.events.event import BarEvent, OrderEvent, Event, TradesEvent, OrderBookEvent
-from mmm.events.event_source import AsyncioQueueEventSource
+from mmm.core.events.event import BarEvent, OrderEvent, Event, TradesEvent, OrderBookEvent
+from mmm.core.events.event_source import AsyncioQueueEventSource
 
 
 EVENT_SOURCE_CONF = {  # event source config
@@ -12,7 +12,4 @@ EVENT_SOURCE_CONF = {  # event source config
     OrderEvent: AsyncioQueueEventSource(Queue())
 }
 
-DATABASE = {
-    'type': 'sql',
-    'uri': 'sqlite:///mmm.db'
-}
+DATABASE = 'sqlite:///mmm.db'

@@ -2,9 +2,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List
 
-from mmm.datasource.base import ParserFactory
-from mmm.events.event import BarEvent, TradesEvent, OrderBookEvent, Event
-from mmm.events.parser import Parser
+from mmm.core.datasource.base import ParserFactory
+from mmm.core.events.event import BarEvent, TradesEvent, OrderBookEvent, Event
+from mmm.core.events.parser import Parser
 
 
 class TradesParser(Parser):
