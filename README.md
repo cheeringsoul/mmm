@@ -5,5 +5,5 @@
 
     pip install .
 
-#### Example：
-    <https://github.com/cheeringsoul/mmm-example>
+#### Example
+<https://github.com/cheeringsoul/mmm-example>
