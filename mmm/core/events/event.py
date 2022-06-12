@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Dict
 
 from mmm.credential import Credential
-from mmm.project_types import OrderType, Exchange
+from mmm.project_types import Exchange
 
 
 def clear(data, key):
