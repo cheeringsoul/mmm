@@ -45,6 +45,10 @@ class Strategy(metaclass=StrategyMeta):
     def get_strategy_name(cls):
         return f"{cls.__module__}.{cls.__name__}"
 
+    @property
+    def strategy_name(self):
+        return self.get_strategy_name()
+
     def create_order(self, uniq_id: str, exchange: "Exchange", params):
         """
         :param uniq_id: an unique id represent for this request
