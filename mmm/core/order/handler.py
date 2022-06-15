@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import traceback
 
 import websockets
 from abc import ABC, abstractmethod
@@ -30,46 +31,45 @@ class OrderHandler(ABC):
 class OkexOrderHandler(OrderHandler):
 
     def __init__(self, credential: "Credential"):
-        self.ws_uri = 'wss://ws.okx.com:8443/ws/v5/private'
         super().__init__(credential)
-        self.client = OkexClient(credential.api_key, credential.secret_key, credential.phrase)
-        self.trade_client = OkexTradeAPI(credential.api_key, credential.secret_key, credential.phrase)
+        self.trade_client = OkexTradeAPI(credential.api_key, credential.secret_key, credential.phrase,
+                                         use_server_time=True, flag='0')
 
     async def create_order(self, order_event: "OrderEvent", timeout=8) -> "OrderResult":
-        client_order_id = order_event.params['clOrdId']
-        inst_id = order_event.params['instId']
+        params = order_event.params
+        client_order_id = params['clOrdId']
+        inst_id = params['instId']
         result = OrderResult(
             uniq_id=order_event.uniq_id,
             exchange=order_event.exchange,
             strategy_name=order_event.strategy_name,
             strategy_bot_id=order_event.bot_id,
             client_order_id=client_order_id,
-            order_params=order_event.params,
+            order_params=params,
             status=OrderStatus.CREATED
         )
         try:
-            async with websockets.connect(self.ws_uri) as websocket:
-                params = json.dumps(order_event.params)
-                await websocket.send(params)
-                rv = await websocket.recv()
-                resp = json.loads(rv)
-                if resp['code'] != '0':
+            loop = asyncio.get_running_loop()
+            future = loop.run_in_executor(None, self.trade_client.place_order, params)
+            resp = await asyncio.wait_for(future, timeout=timeout)
+            if resp['code'] != '0':
+                result.status = OrderStatus.FAILED
+                result.msg = f"create order error, params: {params}, error code: {resp['code']}," \
+                             f" error msg: {resp['msg']}"
+            else:
+                rv = await self.query_order(inst_id, client_order_id, timeout)
+                if rv.get('code') != '0':
                     result.status = OrderStatus.FAILED
-                    result.msg = f"create order error, params: {params}, error code: {resp['code']}," \
-                                 f" error msg: {resp['msg']}"
+                    result.msg = f"query order error, params: {params}, error code: {rv['code']}," \
+                                 f" error msg: {rv['msg']}"
                 else:
-                    rv = await self.query_order(inst_id, client_order_id)
-                    if rv.get('code') != '0':
-                        result.status = OrderStatus.FAILED
-                        result.msg = f"create order error, params: {params}, error code: {resp['code']}," \
-                                     f" error msg: {resp['msg']}"
-                    else:
-                        order_id = resp['data'][0]['orderId']
-                        result.order_id = order_id
-                        result.status = OrderStatus.SUCCESS
-                        result.raw_data = resp['data']
+                    order_id = resp['data'][0]['orderId']
+                    result.order_id = order_id
+                    result.status = OrderStatus.SUCCESS
+                    result.raw_data = resp
         except (asyncio.TimeoutError, Exception) as e:
-            err = f"create order error, params: {params}, exception: {e}"
+            tb = traceback.format_exc()
+            err = f"create order error, params: {params}, exception: {e}, traceback: {tb}"
             logger.error(err)
             result.status = OrderStatus.FAILED
             result.msg = err
@@ -81,8 +81,8 @@ class OkexOrderHandler(OrderHandler):
 
     async def query_order(self, inst_id, client_order_id, timeout):
         loop = asyncio.get_running_loop()
-        future = loop.run_in_executor(None, self.trade_client.get_orders, client_order_id)
-        return await asyncio.wait_for(future, timeout=timeout, loop=loop)
+        future = loop.run_in_executor(None, self.trade_client.get_orders, inst_id, client_order_id)
+        return await asyncio.wait_for(future, timeout=timeout)
 
 
 class BinanceOrderHandler(OrderHandler):

@@ -1,8 +1,12 @@
 import json
 import logging
 import asyncio
+from typing import Optional
+
 import websockets
 
+from mmm.credential import Credential
+from mmm.third_party.okex.utils import get_local_timestamp, login_params
 from .parser import ParserFactory, parser_factory
 from mmm.core.events.event import Event
 from mmm.core.events.dispatcher import Dispatcher
@@ -19,8 +23,9 @@ class OkexWsDatasource:
     __uri__ = "wss://wsaws.okex.com:8443/ws/v5/public"  # noqa
     __ping_interval__ = 20
 
-    def __init__(self, factory: "ParserFactory" = parser_factory):
+    def __init__(self, credential: Optional["Credential"] = None, factory: "ParserFactory" = parser_factory):
         self.received_pong = False
+        self.credential: Optional["Credential"] = credential
         self.parser_factory: "ParserFactory" = factory
         self.dispatcher = Dispatcher()
 
@@ -48,6 +53,17 @@ class OkexWsDatasource:
 
     async def _do_subscribe(self, topic: str):
         async with websockets.connect(self.__uri__, ping_interval=None) as ws:
+            if self.credential is not None:
+                timestamp = str(get_local_timestamp())
+                login_str = login_params(timestamp,
+                                         self.credential.api_key,
+                                         self.credential.phrase,
+                                         self.credential.secret_key)
+                await ws.send(login_str)
+                rv = json.loads(await ws.recv())
+                if rv['code'] != '0':
+                    logger.error(f'login error: {rv}')
+                    return
             await ws.send(topic)
             msg = await ws.recv()
             msg = json.loads(msg)

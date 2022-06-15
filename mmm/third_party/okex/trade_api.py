@@ -8,10 +8,7 @@ class TradeAPI(Client):
         Client.__init__(self, api_key, api_secret_key, passphrase, use_server_time, flag)
 
     # Place Order
-    def place_order(self, inst_id, td_mode, side, ord_type, sz, ccy=None,
-                    cl_ord_id=None, tag=None, pos_side=None, px=None, reduce_only=None):
-        params = {'instId': inst_id, 'tdMode': td_mode, 'side': side, 'ordType': ord_type, 'sz': sz, 'ccy': ccy,
-                  'clOrdId': cl_ord_id, 'tag': tag, 'posSide': pos_side, 'px': px, 'reduceOnly': reduce_only}
+    def place_order(self, params):
         return self._request_with_params(POST, PLACE_ORDER, params)
 
     # Place Multiple Orders

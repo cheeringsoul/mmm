@@ -24,7 +24,7 @@ class Order(Base, Mixin):
     __tablename__ = 'order'
 
     uniq_id = Column(String(64), unique=True, nullable=False, doc='exchange name')
-    strategy_bot_id = Column(String(128), unique=True, doc='table strategy_bot column strategy_bot_id')
+    strategy_bot_id = Column(String(128), doc='table strategy_bot column strategy_bot_id')
     strategy_name = Column(String(128), nullable=False, doc='strategy name')
     exchange = Column(Integer, nullable=False, doc='BINANCE = 1, OKEX = 2')
     client_order_id = Column(String(128), nullable=False, doc='client order id')

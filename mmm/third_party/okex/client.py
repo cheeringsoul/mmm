@@ -1,7 +1,8 @@
 import urllib.parse
-
 import requests
 import json
+from datetime import datetime
+
 from mmm.third_party.okex import consts as c, utils, exceptions
 
 
@@ -20,16 +21,17 @@ class Client(object):
         if method == c.GET:
             request_path = request_path + '?' + urllib.parse.urlencode(params)
         url = c.API_URL + request_path
-
-        timestamp = utils.get_timestamp()
-
-        if self.use_server_time:
+        if not self.use_server_time:
+            iso_time = utils.get_timestamp()
+        else:
             timestamp = self._get_server_timestamp()
+            server_time = datetime.utcfromtimestamp(timestamp/1000)
+            iso_time = server_time.isoformat("T", "milliseconds") + 'Z'
 
         body = json.dumps(params) if method == c.POST else ""
 
-        sign = utils.sign(utils.pre_hash(timestamp, method, request_path, str(body)), self.API_SECRET_KEY)
-        header = utils.get_header(self.API_KEY, sign, timestamp, self.PASSPHRASE, self.flag)
+        sign = utils.sign(utils.pre_hash(iso_time, method, request_path, body), self.API_SECRET_KEY)
+        header = utils.get_header(self.API_KEY, sign, iso_time, self.PASSPHRASE, self.flag)
 
         response = None
 
@@ -55,6 +57,6 @@ class Client(object):
         url = c.API_URL + c.SERVER_TIMESTAMP_URL
         response = requests.get(url)
         if response.status_code == 200:
-            return response.json()['ts']
+            return int(response.json()['data'][0]['ts'])
         else:
             return ""
