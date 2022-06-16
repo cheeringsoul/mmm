@@ -38,4 +38,4 @@ class DefaultOrderManager(OrderManager):
     async def query_order_async(self, uniq_id, timeout):
         loop = asyncio.get_running_loop()
         future = loop.run_in_executor(None, self.query_order, uniq_id)
-        return await asyncio.wait_for(future, timeout=timeout, loop=loop)
+        return await asyncio.wait_for(future, timeout=timeout)

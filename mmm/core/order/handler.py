@@ -60,8 +60,8 @@ class OkexOrderHandler(OrderHandler):
                 rv = await self.query_order(inst_id, client_order_id, timeout)
                 if rv.get('code') != '0':
                     result.status = OrderStatus.FAILED
-                    result.msg = f"query order error, params: {params}, error code: {rv['code']}," \
-                                 f" error msg: {rv['msg']}"
+                    result.msg = f"query order error, params: {params}, response: {rv}"
+
                 else:
                     order_id = resp['data'][0]['orderId']
                     result.order_id = order_id
