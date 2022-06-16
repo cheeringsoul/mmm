@@ -24,7 +24,7 @@ class SQLStorage(Storage):
         order.msg = order_result.msg
         order.order_params = order_result.order_params
         order.strategy_name = order_result.strategy_name
-        order.raw_data = order_result.raw_data
+        order.raw_data = order_result.exchange_resp
         with Session(engine) as session:
             try:
                 session.add(order)

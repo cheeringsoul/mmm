@@ -54,19 +54,17 @@ class OkexOrderHandler(OrderHandler):
             resp = await asyncio.wait_for(future, timeout=timeout)
             if resp['code'] != '0':
                 result.status = OrderStatus.FAILED
-                result.msg = f"create order error, params: {params}, error code: {resp['code']}," \
-                             f" error msg: {resp['msg']}"
+                result.msg = json.dumps(resp)
             else:
                 rv = await self.query_order(inst_id, client_order_id, timeout)
                 if rv.get('code') != '0':
                     result.status = OrderStatus.FAILED
-                    result.msg = f"query order error, params: {params}, response: {rv}"
-
+                    result.msg = json.dumps(rv)
                 else:
-                    order_id = resp['data'][0]['orderId']
+                    result.exchange_resp = rv
+                    order_id = rv['data'][0]['orderId']
                     result.order_id = order_id
                     result.status = OrderStatus.SUCCESS
-                    result.raw_data = resp
         except (asyncio.TimeoutError, Exception) as e:
             tb = traceback.format_exc()
             err = f"create order error, params: {params}, exception: {e}, traceback: {tb}"

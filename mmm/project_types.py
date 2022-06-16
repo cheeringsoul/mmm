@@ -42,6 +42,6 @@ class OrderResult:
     status: "OrderStatus"
     order_id: str = ''
     msg: str = ''
-    raw_data: Optional[dict] = None
+    exchange_resp: Optional[dict] = None
 
 

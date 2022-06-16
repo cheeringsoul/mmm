@@ -13,6 +13,9 @@ from typing import Type, Dict, Callable
 from mmm.project_types import Exchange
 
 
+logger = logging.getLogger(__name__)
+
+
 class StrategyMeta(type):
     def __new__(cls, name, bases, kwargs):  # noqa
         event_registry = {}
@@ -78,7 +81,6 @@ class StrategyRunner:
     def __init__(self, strategy: "Strategy"):
         self.strategy = strategy
         self.event_source_conf = settings.EVENT_SOURCE_CONF
-        self.tasks = []
 
     def load_last_state(self):
         """load strategy state from database if exists"""
@@ -88,53 +90,61 @@ class StrategyRunner:
         """save strategy state"""
         # todo
 
-    def create_monitor_task(self):
-        async def _check():
-            while True:
-                for task in self.tasks:
-                    if task.done():
-                        logging.error(f"task {task.get_name()} has exited unexpectedly.")
-                await asyncio.sleep(3)
-        loop = asyncio.get_event_loop()
-        loop.create_task(_check(), name=f'task.{self.strategy}.monitor')
-
     def create_schedule_task(self):
-        async def _timer(i: int, callback: Callable):
-            callback()
-            while True:
-                await asyncio.sleep(i)
-                if inspect.iscoroutinefunction(callback):
-                    await callback()
-                else:
-                    callback()
-
-        loop = asyncio.get_event_loop()
+        async def _timer(i: int, callback: Callable, name: str):
+            try:
+                callback()
+                while True:
+                    await asyncio.sleep(i)
+                    if inspect.iscoroutinefunction(callback):
+                        await callback()
+                    else:
+                        callback()
+            except asyncio.CancelledError:
+                logger.error(f"task {name} canceled.")
+        tasks = []
         registry = self.strategy.__timer_registry__
         for interval, method_name in registry.items():
             method = getattr(self.strategy, method_name)
-            t = loop.create_task(_timer(interval, method), name=f'task.{self.strategy}.timer({interval}')
-            self.tasks.append(t)
+            task_name = f'task.{self.strategy}.timer({interval}'
+            t = asyncio.create_task(_timer(interval, method, task_name), name=task_name)
+            tasks.append(t)
+        return tasks
 
     def create_listening_tasks(self):
-        async def _create_task(e: "EventSource", c: Callable):
-            while True:
-                event = await e.get()
-                if inspect.iscoroutinefunction(c):
-                    await c(event)
-                else:
-                    c(event)
+        async def _create_task(e: "EventSource", c: Callable, name: str):
+            try:
+                while True:
+                    event = await e.get()
+                    if inspect.iscoroutinefunction(c):
+                        await c(event)
+                    else:
+                        c(event)
+            except asyncio.CancelledError:
+                logger.error(f"task {name} canceled.")
 
-        loop = asyncio.get_event_loop()
+        tasks = []
         registry = self.strategy.__event_registry__
         for event_type, method_name in registry.items():
             event_source = self.event_source_conf.get(event_type)
             if event_source is None:
-                logging.error(f'can not find event source of {event_type}.')
+                logger.error(f'can not find event source of {event_type}.')
             method = getattr(self.strategy, method_name)
-            t = loop.create_task(_create_task(event_source, method), name=f'task.{self.strategy}.wait.{event_type}')
-            self.tasks.append(t)
+            task_name = f'task.{self.strategy}.wait.{event_type}'
+            t = asyncio.create_task(_create_task(event_source, method, task_name), name=task_name)
+            tasks.append(t)
+        return tasks
 
     def create_tasks(self):
-        self.create_listening_tasks()
-        self.create_schedule_task()
-        self.create_monitor_task()
+        tasks = self.create_listening_tasks()
+        tasks.extend(self.create_schedule_task())
+        try:
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+            for task in done:
+                name = task.get_name()
+                logger.error(f"task {name} existed, with exception: {task.exception()}")
+            for task in pending:
+                task.cancel()
+        except Exception as e:
+            logger.exception(e)
+
