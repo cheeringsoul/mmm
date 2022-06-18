@@ -1,7 +1,7 @@
 from mmm.credential import Credential
 from mmm.core.events.event import TradesEvent, OrderBookEvent
 from mmm.core.strategy.core.base import Strategy
-from mmm.core.strategy.core.decorators import sub_event, timer
+from mmm.core.strategy.decorators import sub_event, timer
 
 
 class GridStrategy(Strategy):

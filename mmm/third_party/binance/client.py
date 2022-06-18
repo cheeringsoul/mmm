@@ -7242,7 +7242,7 @@ class AsyncClient(BaseClient):
         testnet: bool = False, loop=None
     ):
 
-        self.loop = loop or asyncio.get_event_loop()
+        self.loop = loop or asyncio.get_running_loop()
         super().__init__(api_key, api_secret, requests_params, tld, testnet)
 
     @classmethod

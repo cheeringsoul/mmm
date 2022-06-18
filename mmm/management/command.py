@@ -11,7 +11,7 @@ def start_order_executor():
     from mmm.core.order.executor import OrderExecutor
 
     OrderExecutor().create_task()
-    asyncio.get_event_loop().run_forever()
+    asyncio.get_running_loop().run_forever()
 
 
 @click.command()
@@ -24,7 +24,7 @@ def start_data_source(name, topic):
         OkexWsDatasource().subscribe(topic)
     elif name == 'binance':
         """todo"""
-    asyncio.get_event_loop().run_forever()
+    asyncio.get_running_loop().run_forever()
 
 
 @click.command()

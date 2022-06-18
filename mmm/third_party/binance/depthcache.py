@@ -154,7 +154,7 @@ class BaseDepthCacheManager:
 
         self._client = client
         self._depth_cache = None
-        self._loop = loop or asyncio.get_event_loop()
+        self._loop = loop or asyncio.get_running_loop()
         self._symbol = symbol
         self._limit = limit
         self._last_update_id = None

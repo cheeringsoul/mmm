@@ -55,4 +55,4 @@ class OrderExecutor:
                 event = await self.event_source.get()
                 await self.on_order_event(event)
 
-        asyncio.get_event_loop().create_task(_create_task(), name=f'task.order.executor')
+        asyncio.get_running_loop().create_task(_create_task(), name=f'task.order.executor')

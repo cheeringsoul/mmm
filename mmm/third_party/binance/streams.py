@@ -47,7 +47,7 @@ class ReconnectingWebsocket:
     def __init__(
         self, url: str, path: Optional[str] = None, prefix: str = 'ws/', is_binary: bool = False, exit_coro=None
     ):
-        self._loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_running_loop()
         self._log = logging.getLogger(__name__)
         self._path = path
         self._url = url
@@ -323,7 +323,7 @@ class BinanceSocketManager:
         self.VSTREAM_TESTNET_URL = self.VSTREAM_TESTNET_URL.format(client.tld)
 
         self._conns = {}
-        self._loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_running_loop()
         self._client = client
         self._user_timeout = user_timeout
 

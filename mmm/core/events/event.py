@@ -83,3 +83,9 @@ class OrderEvent(Event):
         self.credential: "Credential" = credential
         self.params: dict = params
 
+
+class ControlEvent(Event):
+    def __init__(self, bot_id: str, command: str):
+        super(ControlEvent, self).__init__(clear(locals(), 'self'))
+        self.bot_id = bot_id
+        self.command = command
