@@ -93,7 +93,8 @@ class StrategyTaskRegistry:
         self._data = defaultdict(dict)
 
     def add_task(self, bot_id: str, schedule_task, event_consuming_task):
-        logger.warning(f"bot id {bot_id} already exists in registry, the original value will be overwritten.")
+        if bot_id in self._data:
+            logger.warning(f"bot id {bot_id} already exists in registry, the original value will be overwritten.")
         self._data[bot_id] = {
             'schedule_task': schedule_task,
             'event_consuming_task': event_consuming_task
@@ -130,7 +131,7 @@ class StrategyControlEventHandler:
         if handler is None:
             logger.warning(f'command {command} unregistered')
             return
-        return handler(event)
+        handler(event)
 
     def save_bot(self, event: "StrategyControlEvent"):
         """todo"""
@@ -161,7 +162,7 @@ class StrategyControlEventHandler:
             if not each.done():
                 logger.error(f'bot {event.bot_id} is already running')
                 return
-        asyncio.get_running_loop().create_task(gather_task(tasks))
+        return asyncio.create_task(gather_task(tasks))
 
     def start_all_bot(self, event: "StrategyControlEvent"):
         bot_tasks = self.task_registry.get_all_tasks()
@@ -169,7 +170,7 @@ class StrategyControlEventHandler:
         async def _run():
             for _, tasks in bot_tasks.items():
                 await gather_task(tasks)
-        asyncio.get_running_loop().create_task(_run())
+        return asyncio.create_task(_run())
 
 
 class StrategyRunner:
@@ -183,7 +184,7 @@ class StrategyRunner:
                                         self.create_event_consuming_tasks(each))
         self.control_event_handler = StrategyControlEventHandler(self.task_registry)
 
-    def run(self):
+    def create_engine_task(self):
         event_source = self.event_source_conf.get(StrategyControlEvent)
 
         async def _run():
@@ -191,13 +192,17 @@ class StrategyRunner:
                 event: "StrategyControlEvent" = await event_source.get()
                 self.control_event_handler.handle(event)
 
-        asyncio.get_running_loop().create_task(_run())
+        return asyncio.create_task(_run())
 
-    def run_all_strategy(self):
-        self.run()
-        event_source = self.event_source_conf.get(StrategyControlEvent)
-        event = StrategyControlEvent(Command.START_ALL)
-        event_source.put_nowait(event)
+    def get_task(self, bot_id=None):
+        async def _send_event():
+            event_source = self.event_source_conf.get(StrategyControlEvent)
+            if bot_id:
+                event = StrategyControlEvent(Command.START_BOT, bot_id)
+            else:
+                event = StrategyControlEvent(Command.START_ALL)
+            event_source.put_nowait(event)
+        return [self.create_engine_task(), asyncio.create_task(_send_event())]
 
     def create_schedule_task(self, strategy):  # noqa
         async def _timer(i: int, callback: Callable, name: str):
@@ -215,7 +220,7 @@ class StrategyRunner:
         registry = strategy.__timer_registry__
         for interval, method_name in registry.items():
             method = getattr(strategy, method_name)
-            task_name = f'task.{strategy}.timer({interval}'
+            task_name = f'task.{strategy}.timer({interval})'
             t = asyncio.create_task(_timer(interval, method, task_name), name=task_name)
             tasks.append(t)
         return tasks

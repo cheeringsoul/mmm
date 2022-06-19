@@ -49,7 +49,7 @@ class OkexOrderHandler(OrderHandler):
             status=OrderStatus.CREATED
         )
         try:
-            loop = asyncio.get_running_loop()
+            loop = asyncio.get_event_loop()
             future = loop.run_in_executor(None, self.trade_client.place_order, params)
             resp = await asyncio.wait_for(future, timeout=timeout)
             if resp['code'] != '0':
@@ -78,7 +78,7 @@ class OkexOrderHandler(OrderHandler):
         ...
 
     async def query_order(self, inst_id, client_order_id, timeout):
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         future = loop.run_in_executor(None, self.trade_client.get_orders, inst_id, client_order_id)
         return await asyncio.wait_for(future, timeout=timeout)
 

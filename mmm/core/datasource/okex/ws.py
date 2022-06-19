@@ -48,8 +48,7 @@ class OkexWsDatasource:
                 except Exception as e:
                     logger.exception(e)
                     logger.info('reconnecting...')
-        loop = asyncio.get_running_loop()
-        loop.create_task(create_task(), name=f'task.okex.ws.sub.{topic}')
+        asyncio.get_event_loop().create_task(create_task(), name=f'task.okex.ws.sub.{topic}')
 
     async def _do_subscribe(self, topic: str):
         async with websockets.connect(self.__uri__, ping_interval=None) as ws:

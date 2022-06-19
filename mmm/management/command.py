@@ -14,7 +14,7 @@ def start_order_executor():
     from mmm.core.order.executor import OrderExecutor
 
     OrderExecutor().create_task()
-    asyncio.get_running_loop().run_forever()
+    asyncio.get_event_loop().run_forever()
 
 
 @click.command()
@@ -27,13 +27,20 @@ def start_data_source(name, topic):
         OkexWsDatasource().subscribe(topic)
     elif name == 'binance':
         """todo"""
-    asyncio.get_running_loop().run_forever()
+    asyncio.get_event_loop().run_forever()
 
 
 @click.command()
-@click.option('--name', '-n', required=True)
-def start_strategy(name):
-    """todo"""
+@click.option('--bot-id', '-b', required=True)
+def start_strategy(bot_id):
+    from mmm.config.tools import load_strategy_app
+    from mmm.core.strategy.core import StrategyRunner
+
+    apps = load_strategy_app(settings.STRATEGIES)
+
+    async def _do():
+        await asyncio.gather(*StrategyRunner(apps).get_task(bot_id))
+    asyncio.run(_do())
 
 
 @click.command()
