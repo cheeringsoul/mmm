@@ -1,5 +1,8 @@
 import asyncio
 import click
+from prettytable import PrettyTable
+
+from mmm.config import settings
 
 
 @click.group()
@@ -35,7 +38,14 @@ def start_strategy(name):
 
 @click.command()
 def list_strategy():
-    """todo"""
+    from mmm.config.tools import load_strategy_app
+
+    apps = load_strategy_app(settings.STRATEGIES)
+    tbl = PrettyTable()
+    tbl.field_names = ["Strategy", "bot id"]
+    rows = [[each.strategy_name, each.bot_id] for each in apps]
+    tbl.add_rows(rows)
+    click.echo(tbl)
 
 
 @click.command()
@@ -61,3 +71,4 @@ cli.add_command(start_data_source)
 cli.add_command(start_strategy)
 cli.add_command(start_admin)
 cli.add_command(init_database)
+cli.add_command(list_strategy)

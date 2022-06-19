@@ -2,7 +2,7 @@ import importlib
 import os
 from frozendict import frozendict
 
-from mmm.exceptions import ImproperlyConfigured
+from mmm.exceptions import ConfigureError
 
 empty = object()
 
@@ -21,6 +21,9 @@ class Settings:
         for setting in dir(mod):
             if setting.isupper():
                 value = getattr(mod, setting)
+                if setting == 'STRATEGIES':
+                    if not all([':' in each for each in value]):
+                        raise ConfigureError('STRATEGIES configured incorrectly.')
                 setattr(self, setting, value)
 
 
@@ -31,7 +34,7 @@ class LazySettings:
     def _set_up(self):
         settings_module = os.environ.get('MMM_SETTINGS_MODULE')
         if not settings_module:
-            raise ImproperlyConfigured('settings are not configured.')
+            raise ConfigureError('setting module is not configured.')
         self._wrapped = Settings(settings_module)
 
     def __getattr__(self, name):
@@ -40,7 +43,7 @@ class LazySettings:
         try:
             return getattr(self._wrapped, name)
         except AttributeError:
-            raise ImproperlyConfigured(f'{name} is not configured.')
+            raise ConfigureError(f'{name} is not configured.')
 
 
 settings = LazySettings()

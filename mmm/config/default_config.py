@@ -13,4 +13,6 @@ EVENT_SOURCE_CONF = {  # event source config
     StrategyControlEvent: AsyncioQueueEventSource(Queue())
 }
 
+STRATEGIES = []
+
 DATABASE = 'sqlite:///mmm.db'
