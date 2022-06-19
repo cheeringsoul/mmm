@@ -34,6 +34,11 @@ def start_strategy(name):
 
 
 @click.command()
+def list_strategy():
+    """todo"""
+
+
+@click.command()
 @click.option('--host', '-h', default='127.0.0.1')
 @click.option('--port', '-p', default='8888')
 def start_admin(host, port):

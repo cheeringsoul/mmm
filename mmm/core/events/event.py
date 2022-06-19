@@ -3,7 +3,8 @@ import pickle
 from copy import deepcopy
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict
+from enum import Enum
+from typing import Dict, Optional
 
 from mmm.credential import Credential
 from mmm.project_types import Exchange
@@ -84,8 +85,16 @@ class OrderEvent(Event):
         self.params: dict = params
 
 
-class ControlEvent(Event):
-    def __init__(self, bot_id: str, command: str):
-        super(ControlEvent, self).__init__(clear(locals(), 'self'))
+class Command(Enum):
+    START_BOT = 1
+    STOP_BOT = 2
+    START_ALL = 3
+    STOP_ALL = 4
+
+
+class StrategyControlEvent(Event):
+
+    def __init__(self, command: "Command", bot_id: Optional[str] = None):
+        super(StrategyControlEvent, self).__init__(clear(locals(), 'self'))
         self.bot_id = bot_id
         self.command = command

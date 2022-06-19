@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from mmm.config import settings
 from mmm.credential import Credential
-from mmm.core.events.event import Event, OrderEvent, ControlEvent
+from mmm.core.events.event import Event, OrderEvent, StrategyControlEvent, Command
 from mmm.core.events.event_source import EventSource
 from mmm.core.order.manager import OrderManager, DefaultOrderManager
 from mmm.project_types import Exchange
@@ -114,38 +114,56 @@ class StrategyTaskRegistry:
         return {bot_id: self.get_tasks(bot_id) for bot_id in self._data}
 
 
-class StrategyRunner:
-    def __init__(self, strategies: List["Strategy"]):
-        self.event_source_conf = settings.EVENT_SOURCE_CONF
-        self.strategy_bot_conf = defaultdict(list)
-        self.task_registry = StrategyTaskRegistry()
-        for each in strategies:
-            self.strategy_bot_conf[each.strategy_name].append(each.bot_id)
-            if self.task_registry.exists(each.bot_id):
-                raise RuntimeError(f'bot id {each.bot_id} repeated, you must use a globally unique id as bot id')
-            self.task_registry.add_task(each.bot_id,
-                                        self.create_schedule_task(each),
-                                        self.create_event_consuming_tasks(each))
+class StrategyControlEventHandler:
+    def __init__(self, task_registry: "StrategyTaskRegistry"):
+        self.task_registry = task_registry
+        self.handler_conf = {
+            Command.START_BOT: self.stop_bot,
+            Command.STOP_BOT: self.stop_bot,
+            Command.START_ALL: self.start_all_bot,
+            Command.STOP_ALL: self.stop_all_bot
+        }
 
-    def load_last_state(self):
-        """load strategy state from database if exists"""
-        # todo
-
-    def start_bot(self, bot_id: str):
-        """"""
-
-    def start_strategy(self, bot_id: str):
-        if not self.task_registry.exists(bot_id):
-            logger.error(f'bot {bot_id} not fund.')
+    def handle(self, event: "StrategyControlEvent"):
+        command = event.command
+        handler = self.handler_conf.get(command)
+        if handler is None:
+            logger.warning(f'command {command} unregistered')
             return
-        tasks = self.task_registry.get_tasks(bot_id)
+        return handler(event)
+
+    def save_bot(self, event: "StrategyControlEvent"):
+        """todo"""
+
+    def reload_bot(self, event: "StrategyControlEvent"):
+        """todo"""
+
+    def stop_bot(self, event: "StrategyControlEvent"):
+        tasks = self.task_registry.get_tasks(event.bot_id)
+        if not tasks:
+            return
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+
+    def stop_all_bot(self, event: "StrategyControlEvent"):
+        tasks = self.task_registry.get_all_tasks()
+        for task in tasks.values():
+            if not task.done():
+                task.cancel()
+
+    def start_bot(self, event: "StrategyControlEvent"):
+        if not self.task_registry.exists(event.bot_id):
+            logger.error(f'bot {event.bot_id} not fund.')
+            return
+        tasks = self.task_registry.get_tasks(event.bot_id)
         for each in tasks:
             if not each.done():
-                logger.error(f'bot {bot_id} is already running')
+                logger.error(f'bot {event.bot_id} is already running')
                 return
         asyncio.get_running_loop().create_task(gather_task(tasks))
 
-    def start_all_strategy(self):
+    def start_all_bot(self, event: "StrategyControlEvent"):
         bot_tasks = self.task_registry.get_all_tasks()
 
         async def _run():
@@ -153,28 +171,33 @@ class StrategyRunner:
                 await gather_task(tasks)
         asyncio.get_running_loop().create_task(_run())
 
-    def create_monitor(self):
-        event_source = self.event_source_conf.get(ControlEvent)
 
-        async def _monitor():
+class StrategyRunner:
+    def __init__(self, strategies: List["Strategy"]):
+        self.event_source_conf = settings.EVENT_SOURCE_CONF
+        self.task_registry = StrategyTaskRegistry()
+        for each in strategies:
+            if self.task_registry.exists(each.bot_id):
+                raise RuntimeError(f'bot id {each.bot_id} repeated, you must use a globally unique id as bot id')
+            self.task_registry.add_task(each.bot_id, self.create_schedule_task(each),
+                                        self.create_event_consuming_tasks(each))
+        self.control_event_handler = StrategyControlEventHandler(self.task_registry)
+
+    def run(self):
+        event_source = self.event_source_conf.get(StrategyControlEvent)
+
+        async def _run():
             while True:
-                event: "ControlEvent" = await event_source.get()
-                if event.command == 'stop':
-                    self.stop_bot(event.bot_id)
-                elif event.command == 'stopall':
-                    self.stop_all()
+                event: "StrategyControlEvent" = await event_source.get()
+                self.control_event_handler.handle(event)
 
-        asyncio.get_running_loop().create_task(_monitor())
+        asyncio.get_running_loop().create_task(_run())
 
-    def stop_bot(self, bot_id):
-        tasks = self.task_registry.get_tasks(bot_id)
-        if not tasks:
-            return
-        for task in tasks:
-            task.cancel()
-
-    def stop_all(self):
-        """todo"""
+    def run_all_strategy(self):
+        self.run()
+        event_source = self.event_source_conf.get(StrategyControlEvent)
+        event = StrategyControlEvent(Command.START_ALL)
+        event_source.put_nowait(event)
 
     def create_schedule_task(self, strategy):  # noqa
         async def _timer(i: int, callback: Callable, name: str):
