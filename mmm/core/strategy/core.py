@@ -10,7 +10,7 @@ from mmm.core.events.event_source import EventSource
 from mmm.core.order.manager import OrderManager, DefaultOrderManager
 from mmm.project_types import Exchange
 
-from typing import Type, Dict, Callable, List, Optional
+from typing import Type, Dict, Callable, List
 
 logger = logging.getLogger(__name__)
 
