@@ -216,13 +216,12 @@ class StrategyRunner:
                         callback()
             except asyncio.CancelledError:
                 logger.error(f"task {name} canceled.")
-        tasks = []
+        tasks = {}
         registry = strategy.__timer_registry__
         for interval, method_name in registry.items():
             method = getattr(strategy, method_name)
             task_name = f'task.{strategy}.timer({interval})'
-            t = asyncio.create_task(_timer(interval, method, task_name), name=task_name)
-            tasks.append(t)
+            tasks[task_name] = _timer(interval, method, task_name)
         return tasks
 
     def create_event_consuming_tasks(self, strategy):
@@ -237,7 +236,7 @@ class StrategyRunner:
             except asyncio.CancelledError:
                 logger.error(f"task {name} canceled.")
 
-        tasks = []
+        tasks = {}
         registry = strategy.__event_registry__
         for event_type, method_name in registry.items():
             event_source = self.event_source_conf.get(event_type)
@@ -245,6 +244,5 @@ class StrategyRunner:
                 logger.error(f'can not find event source of {event_type}.')
             method = getattr(strategy, method_name)
             task_name = f'task.{strategy}.wait.{event_type}'
-            t = asyncio.create_task(_create_task(event_source, method, task_name), name=task_name)
-            tasks.append(t)
+            tasks[task_name] = _create_task(event_source, method, task_name)
         return tasks

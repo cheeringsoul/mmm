@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from abc import ABCMeta, abstractmethod
 from typing import Optional
 
@@ -36,6 +37,16 @@ class DefaultOrderManager(OrderManager):
         return self.storage.query_order(uniq_id)
 
     async def query_order_async(self, uniq_id, timeout):
-        loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(None, self.query_order, uniq_id)
-        return await asyncio.wait_for(future, timeout=timeout)
+        def do_query(_uniq_id, e: "asyncio.Event"):
+            while not e.is_set():
+                rv = self.query_order(_uniq_id)
+                if rv:
+                    return rv
+                time.sleep(0.01)
+
+        event = asyncio.Event()
+        fut = asyncio.to_thread(do_query, event)
+        try:
+            return await asyncio.wait_for(fut, timeout=timeout)
+        except (asyncio.TimeoutError, Exception):
+            event.set()

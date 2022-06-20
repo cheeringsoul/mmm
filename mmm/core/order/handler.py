@@ -3,7 +3,6 @@ import json
 import logging
 import traceback
 
-import websockets
 from abc import ABC, abstractmethod
 from mmm.credential import Credential
 from mmm.core.events.event import OrderEvent
@@ -35,7 +34,7 @@ class OkexOrderHandler(OrderHandler):
         self.trade_client = OkexTradeAPI(credential.api_key, credential.secret_key, credential.phrase,
                                          use_server_time=True, flag='0')
 
-    async def create_order(self, order_event: "OrderEvent", timeout=8) -> "OrderResult":
+    async def create_order(self, order_event: "OrderEvent") -> "OrderResult":
         params = order_event.params
         client_order_id = params['clOrdId']
         inst_id = params['instId']
@@ -49,14 +48,12 @@ class OkexOrderHandler(OrderHandler):
             status=OrderStatus.CREATED
         )
         try:
-            loop = asyncio.get_event_loop()
-            future = loop.run_in_executor(None, self.trade_client.place_order, params)
-            resp = await asyncio.wait_for(future, timeout=timeout)
+            resp = await asyncio.to_thread(self.trade_client.place_order, params)
             if resp['code'] != '0':
                 result.status = OrderStatus.FAILED
                 result.msg = json.dumps(resp)
             else:
-                rv = await self.query_order(inst_id, client_order_id, timeout)
+                rv = await self.query_order(inst_id, client_order_id)
                 if rv.get('code') != '0':
                     result.status = OrderStatus.FAILED
                     result.msg = json.dumps(rv)
@@ -65,7 +62,7 @@ class OkexOrderHandler(OrderHandler):
                     order_id = rv['data'][0]['orderId']
                     result.order_id = order_id
                     result.status = OrderStatus.SUCCESS
-        except (asyncio.TimeoutError, Exception) as e:
+        except Exception as e:
             tb = traceback.format_exc()
             err = f"create order error, params: {params}, exception: {e}, traceback: {tb}"
             logger.error(err)
@@ -77,10 +74,8 @@ class OkexOrderHandler(OrderHandler):
     async def create_batch_order(self):
         ...
 
-    async def query_order(self, inst_id, client_order_id, timeout):
-        loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(None, self.trade_client.get_orders, inst_id, client_order_id)
-        return await asyncio.wait_for(future, timeout=timeout)
+    async def query_order(self, inst_id, client_order_id):
+        return await asyncio.to_thread(self.trade_client.get_orders, inst_id, client_order_id)
 
 
 class BinanceOrderHandler(OrderHandler):
