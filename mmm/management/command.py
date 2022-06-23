@@ -31,16 +31,13 @@ def start_data_source(name, topic):
 
 
 @click.command()
-@click.option('--bot-id', '-b', required=True)
+@click.option('--bot-id')
 def start_strategy(bot_id):
     from mmm.config.tools import load_strategy_app
-    from mmm.core.strategy.core import StrategyRunner
+    from mmm.core.strategy import StrategyRunner
 
     apps = load_strategy_app(settings.STRATEGIES)
-
-    async def _do():
-        await asyncio.gather(*StrategyRunner(apps).get_task(bot_id))
-    asyncio.run(_do())
+    asyncio.run(StrategyRunner(apps).start(bot_id))
 
 
 @click.command()

@@ -92,9 +92,9 @@ class Command(Enum):
     STOP_ALL = 4
 
 
-class StrategyControlEvent(Event):
+class BotControlEvent(Event):
 
     def __init__(self, command: "Command", bot_id: Optional[str] = None):
-        super(StrategyControlEvent, self).__init__(clear(locals(), 'self'))
+        super(BotControlEvent, self).__init__(clear(locals(), 'self'))
         self.bot_id = bot_id
         self.command = command
