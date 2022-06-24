@@ -6,9 +6,8 @@ from typing import Optional
 
 from mmm.config import settings
 from mmm.core.events.event import OrderEvent
+from mmm.core.storage import default_storage, Storage
 from mmm.project_types import OrderResult
-from mmm.core.schema import Storage
-from mmm.core.schema.impl import default_storage
 
 
 class OrderManager(metaclass=ABCMeta):

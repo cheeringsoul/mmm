@@ -1,15 +1,23 @@
 import logging
 
+from abc import ABCMeta, abstractmethod
+from sqlalchemy.orm import Session
 from typing import Optional
 
-from mmm.core.schema import Storage
-from mmm.core.schema.models import Order, engine
-from sqlalchemy.orm import Session
-
+from mmm.schema import Order, engine
 from mmm.project_types import OrderResult, Exchange, OrderStatus
 
 
 logger = logging.getLogger(__name__)
+
+
+class Storage(metaclass=ABCMeta):
+
+    @abstractmethod
+    def save_order(self, order_result: "OrderResult"): ...
+
+    @abstractmethod
+    def query_order(self, uniq_id: str) -> Optional["OrderResult"]: ...
 
 
 class SQLStorage(Storage):

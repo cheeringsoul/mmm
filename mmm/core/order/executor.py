@@ -5,12 +5,12 @@ from copy import deepcopy
 from typing import List
 
 from mmm.config import settings
+from mmm.core.storage import default_storage, Storage
 from mmm.credential import Credential
 from mmm.core.events.event import OrderEvent
 from mmm.core.order.handler import OkexOrderHandler, OrderHandler, BinanceOrderHandler
 from mmm.core.order.filter import Filter
 from mmm.project_types import Exchange
-from mmm.core.schema.impl import Storage, default_storage
 
 logger = logging.getLogger(__name__)
 

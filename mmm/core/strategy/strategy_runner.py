@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from typing import List, Optional
 
@@ -22,7 +23,14 @@ class ControllerServer:
             await server.serve_forever()
 
     async def handler(self, reader, writer):
-        ...
+        rv = await reader.read(1000)
+        try:
+            data = json.loads(rv)
+            command, bot_id = data.get('command'), data.get('bot_id')
+            event = BotControlEvent(Command(command), bot_id)
+            self.event_source.put_nowait(event)
+        except Exception as e:
+            logger.exception(e)
 
 
 class StrategyRunner:
@@ -41,17 +49,17 @@ class StrategyRunner:
         except Exception as e:
             logger.exception(e)
 
-    async def run(self):
+    async def start(self):
         server_task = asyncio.create_task(self.server.run(), name='task.controller_server')
         monitor_task = asyncio.create_task(self.monitor(), name='task.strategy_runner.monitor')
         await asyncio.gather(server_task, monitor_task)
 
-    async def start(self, bot_id: Optional[str] = None):
+    async def start_strategy(self, bot_id: Optional[str] = None):
         if bot_id:
             self.event_source.put_nowait(BotControlEvent(Command.START_ALL, bot_id))
         else:
             self.event_source.put_nowait(BotControlEvent(Command.START_ALL))
-        await self.run()
+        await self.start()
 
     async def control_bot(self, event: "BotControlEvent"):
         if event.command == Command.START_ALL:

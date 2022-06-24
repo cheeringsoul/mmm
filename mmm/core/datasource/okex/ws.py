@@ -38,17 +38,16 @@ class OkexWsDatasource:
         if not self.received_pong:
             raise CollectionError('looking forward a pong message, but not received.')
 
-    def subscribe(self, topic: str):
+    async def subscribe(self, topic: str):
         async def create_task():
-            while True:
-                try:
-                    await self._do_subscribe(topic)
-                except CollectionError as e:
-                    logger.exception("looking forward a pong message, but not received.", exc_info=e)
-                except Exception as e:
-                    logger.exception(e)
-                    logger.info('reconnecting...')
-        asyncio.get_event_loop().create_task(create_task(), name=f'task.okex.ws.sub.{topic}')
+            try:
+                await self._do_subscribe(topic)
+            except CollectionError as e:
+                logger.exception("looking forward a pong message, but not received.", exc_info=e)
+            except Exception as e:
+                logger.exception(e)
+                logger.info('reconnecting...')
+        await asyncio.create_task(create_task(), name=f'task.okex.ws.sub.{topic}')
 
     async def _do_subscribe(self, topic: str):
         async with websockets.connect(self.__uri__, ping_interval=None) as ws:

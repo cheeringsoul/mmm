@@ -1,8 +1,11 @@
 import asyncio
+import json
+
 import click
 from prettytable import PrettyTable
 
 from mmm.config import settings
+from sqlalchemy_utils import database_exists, create_database
 
 
 @click.group()
@@ -18,26 +21,64 @@ def start_order_executor():
 
 
 @click.command()
-@click.option('--names', '-n', required=True, type=click.Choice(['okex', 'binance']), multiple=True)
+@click.option('--name', '-n', required=True, type=click.Choice(['okex', 'binance']))
 @click.option('--topic', '-t', required=True, type=str)
 def start_data_source(name, topic):
     from mmm.core.datasource import OkexWsDatasource
 
     if name == 'okex':
-        OkexWsDatasource().subscribe(topic)
+        task = OkexWsDatasource().subscribe(topic)
     elif name == 'binance':
         """todo"""
-    asyncio.get_event_loop().run_forever()
+    asyncio.run(task)
 
 
 @click.command()
-@click.option('--bot-id')
-def start_strategy(bot_id):
+@click.option('--bot-id', default=None, help='bot id of strategy. if None, it will start all bots.')
+@click.option('--with-datasource', type=click.Choice(['okex', 'binance']),
+              help='If you start a strategy bot with all-alone model, you must specify a datasource. '
+                   'If you start strategy bot with distributed model, then you can ignore this option')
+@click.option('--topic', type=str, help="If you use all-alone model, you must specify topic to subscribe.")
+def start_strategy(bot_id, with_datasource=None, topic=None):
     from mmm.config.tools import load_strategy_app
     from mmm.core.strategy import StrategyRunner
+    from mmm.core.datasource import OkexWsDatasource
 
     apps = load_strategy_app(settings.STRATEGIES)
-    asyncio.run(StrategyRunner(apps).start(bot_id))
+    if with_datasource == 'okex' and topic:
+        async def main():
+            task1 = OkexWsDatasource().subscribe(topic)
+            task2 = StrategyRunner(apps).start_strategy(bot_id)
+            await asyncio.gather(task1, task2)
+        asyncio.run(main())
+    elif with_datasource == 'binance' and topic:
+        ...
+    else:
+        asyncio.run(StrategyRunner(apps).start_strategy(bot_id))
+
+
+@click.command()
+@click.option('--with-datasource', type=click.Choice(['okex', 'binance']),
+              help='If you start a strategy bot with all-alone model, you must specify a datasource. '
+                   'If you start strategy bot with distributed model, then you can ignore this option')
+@click.option('--topic', type=str, help="If you use all-alone model, you must specify topic to subscribe.")
+def prepare_strategy(with_datasource=None, topic=None):
+    from mmm.config.tools import load_strategy_app
+    from mmm.core.strategy import StrategyRunner
+    from mmm.core.datasource import OkexWsDatasource
+
+    apps = load_strategy_app(settings.STRATEGIES)
+    click.echo(f"listening control command...")
+    if with_datasource == 'okex' and topic:
+        async def main():
+            task1 = OkexWsDatasource().subscribe(topic)
+            task2 = StrategyRunner(apps).start()
+            await asyncio.gather(task1, task2)
+        asyncio.run(main())
+    elif with_datasource == 'binance' and topic:
+        ...
+    else:
+        asyncio.run(StrategyRunner(apps).start())
 
 
 @click.command()
@@ -55,14 +96,16 @@ def list_strategy():
 @click.command()
 @click.option('--host', '-h', default='127.0.0.1')
 @click.option('--port', '-p', default='8888')
-def start_admin(host, port):
-    """todo"""
+def start_dashboard(host, port):
+    from mmm.dashboard.app import application
+
+    application.run(host=host, port=int(port))
 
 
 @click.command()
 def init_database():
-    from sqlalchemy_utils import database_exists, create_database
-    from mmm.core.schema.models import engine, Base
+    from mmm.schema import engine
+    from mmm.schema.models import Base
 
     if not database_exists(engine.url):
         create_database(engine.url)
@@ -72,7 +115,8 @@ def init_database():
 
 cli.add_command(start_order_executor)
 cli.add_command(start_data_source)
+cli.add_command(prepare_strategy)
 cli.add_command(start_strategy)
-cli.add_command(start_admin)
-cli.add_command(init_database)
 cli.add_command(list_strategy)
+cli.add_command(start_dashboard)
+cli.add_command(init_database)
