@@ -1,5 +1,4 @@
 import asyncio
-import json
 
 import click
 from prettytable import PrettyTable
