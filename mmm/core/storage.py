@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from mmm.schema import Order, engine
+from mmm.schema import Bot, Order, engine
 from mmm.project_types import OrderResult, Exchange, OrderStatus
 
 
@@ -18,6 +18,9 @@ class Storage(metaclass=ABCMeta):
 
     @abstractmethod
     def query_order(self, uniq_id: str) -> Optional["OrderResult"]: ...
+
+    @abstractmethod
+    def create_or_update_bot(self, bot_id, **kwargs): ...
 
 
 class SQLStorage(Storage):
@@ -58,6 +61,21 @@ class SQLStorage(Storage):
                 order_id=rv.order_id,
                 msg=rv.msg
             )
+
+    def create_or_update_bot(self, bot_id, **kwargs):
+        with Session(engine) as session:
+            rv = session.query(Bot).filter_by(bot_id=bot_id).first()
+            if rv:
+                for key, value in kwargs.items():
+                    setattr(rv, key, value)
+            else:
+                bot = Bot(bot_id=bot_id, **kwargs)
+                session.add(bot)
+            try:
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                logger.exception(e)
 
 
 default_storage = SQLStorage()

@@ -4,6 +4,7 @@ from typing import Type, Dict
 from mmm.credential import Credential
 from mmm.core.events.event import Event, OrderEvent
 from mmm.core.order.manager import OrderManager, DefaultOrderManager
+from mmm.exceptions import SubEventError
 from mmm.project_types import Exchange
 
 
@@ -16,10 +17,11 @@ class StrategyMeta(type):
         timer_registry = {}
         for method_name, method in kwargs.items():
             e = getattr(method, '__sub_event__', None)
-            if e in event_registry.keys():
-                raise RuntimeError(f"You can not sub {e.__name__} twice with different handler.")
-            if e is not None:
-                event_registry[e] = method_name
+            if e is None:
+                continue
+            if e in event_registry:
+                raise SubEventError(f"You can not sub {e.__name__} twice.")
+            event_registry[e] = method_name
             interval = getattr(method, '__timer_interval__', None)
             if interval is not None:
                 timer_registry[interval] = method_name

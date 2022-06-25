@@ -1,1 +1,1 @@
-from .models import Order, engine
+from .models import Bot, Order, engine

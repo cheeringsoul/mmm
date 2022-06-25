@@ -42,9 +42,9 @@ class StrategyBotPosition(Base, Mixin):
     instrument = Column(String(32), nullable=False, doc='instrument')
 
 
-class StrategyBot(Base, Mixin):
+class Bot(Base, Mixin):
     __tablename__ = 'strategy_bot'
 
+    bot_id = Column(String(128), unique=True)
     strategy_name = Column(String(128), nullable=False, doc='strategy name')
-    strategy_bot_id = Column(String(128), unique=True)
-    status = Column(String(8), doc='created、running、stopped、failed')
+    status = Column(String(8), doc='created 0, running 1, stopped 2')
