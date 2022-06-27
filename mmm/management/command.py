@@ -58,8 +58,8 @@ def start_strategy(bot_id, with_datasource=None, topic=None):
 
 @click.command()
 @click.option('--with-datasource', type=click.Choice(['okex', 'binance']),
-              help='If you start a strategy bot with all-alone model, you must specify a datasource. '
-                   'If you start strategy bot with distributed model, then you can ignore this option')
+              help='If you start a strategy bot in all-alone model, you must specify a datasource. '
+                   'If you start strategy bot in distributed model, then you can ignore this option')
 @click.option('--topic', type=str, help="If you use all-alone model, you must specify topic to subscribe.")
 def prepare_strategy(with_datasource=None, topic=None):
     from mmm.config.tools import load_strategy_app

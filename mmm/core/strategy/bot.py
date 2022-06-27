@@ -2,6 +2,7 @@ import asyncio
 import functools
 import inspect
 import logging
+from abc import ABCMeta, abstractmethod
 
 from collections import ChainMap
 from datetime import datetime
@@ -107,50 +108,96 @@ class BotRegistry:
 
 class HandlerMetaclass(type):
     def __new__(cls, name, bases, kwargs):  # noqa
-        command_registry = {}
+        command_registry = cls.__get_command_registry__(cls, bases)
         for method_name, method in kwargs.items():
             command = getattr(method, '__command__', None)
             if command is None:
                 continue
             if command in command_registry:
                 raise HandlerRegisterError(f'You can not sub {command} twice.')
-            command_registry[command] = method
+            command_registry[command] = method_name
         kwargs['__command_registry__'] = command_registry
         return super().__new__(cls, name, bases, kwargs)
 
+    def __get_command_registry__(cls, bases):  # noqa
+        if not bases:
+            return {}
+        for each in bases:
+            if getattr(each, '__command_registry__'):
+                command_registry = getattr(each, '__command_registry__')
+                break
+        else:
+            command_registry = {}
+        return command_registry
 
-class BotControlEventHandler(metaclass=HandlerMetaclass):
+
+class HandlerABCMetaclass(ABCMeta, HandlerMetaclass):
+    pass
+
+
+class BotCommandHandler(metaclass=HandlerABCMetaclass):
+
+    @abstractmethod
+    async def start_bot(self, event: "BotControlEvent"): ...
+
+    @abstractmethod
+    async def stop_bot(self, event: "BotControlEvent"): ...
+
+    @abstractmethod
+    async def start_all_bot(self, event: "BotControlEvent"): ...
+
+    @abstractmethod
+    async def stop_all_bot(self, event: "BotControlEvent"): ...
+
+    @register_handler(Command.START_BOT)
+    async def _start_bot(self, event: "BotControlEvent"):
+        await self.start_bot(event)
+
+    @register_handler(Command.STOP_BOT)
+    async def _stop_bot(self, event: "BotControlEvent"):
+        await self.stop_bot(event)
+
+    @register_handler(Command.START_ALL)
+    async def _start_all_bot(self, event: "BotControlEvent"):
+        await self.start_all_bot(event)
+
+    @register_handler(Command.STOP_ALL)
+    async def _stop_all_bot(self, event: "BotControlEvent"):
+        await self.stop_all_bot(event)
+
+    def handel_command(self, command: Command):
+        method_name = getattr(self, '__command_registry__').get(command, None)
+        if method_name is None:
+            logger.error(f"can not find handler of command {command} in BotControlEventHandler")
+            return
+        return getattr(self, method_name)(command)
+
+
+class BotControlEventHandler(BotCommandHandler):
     def __init__(self, bot_registry: "BotRegistry", storage=default_storage):
+        super().__init__()
         self.bot_registry = bot_registry
         self.storage: "Storage" = storage
         self.bot_tasks = {}
-        self.persistent_task = {}
+        self.persistent_task = set()
 
     def handel(self, event: "BotControlEvent"):
-        command = event.command
-        method = getattr(self, '__command_registry__').get(command, None)
-        if method is None:
-            logger.error(f"can not find handler of command {command} in BotControlEventHandler")
-            return
-        return method(event)
+        return self.handel_command(event.command)
 
-    def _clear_bot_task(self, bot_id):
-        self.storage.create_or_update_bot(bot_id, status=BotStatus.Stopped)
+    def _clear_bot_task(self, bot_id, task):
+        self.storage.create_or_update_bot(bot_id, status=BotStatus.Stopped.value)
         del self.bot_tasks[bot_id]
-
-    def _clear_persistent_task(self, bot_id):
-        del self.persistent_task[bot_id]
 
     async def persistent_bot(self, bot: "Bot"):
         s = datetime.utcnow()
         self.storage.create_or_update_bot(bot.bot_id, strategy_name=bot.strategy.strategy_name,
-                                          status=BotStatus.Created)
+                                          status=BotStatus.Created.value)
         while (datetime.utcnow() - s).seconds < 15:
             task = self.bot_tasks.get(bot.bot_id)
             if task:
                 if not task.done():
                     self.storage.create_or_update_bot(bot.bot_id, strategy_name=bot.strategy.strategy_name,
-                                                      status=BotStatus.Running)
+                                                      status=BotStatus.Running.value)
                     return
             await asyncio.sleep(0.5)
 
@@ -162,32 +209,27 @@ class BotControlEventHandler(metaclass=HandlerMetaclass):
             t.add_done_callback(functools.partial(self._clear_bot_task, bot_id))
 
             t = asyncio.create_task(self.persistent_bot(bot))
-            self.persistent_task[bot.bot_id] = t
-            t.add_done_callback(functools.partial(self._clear_persistent_task, bot_id))
+            self.persistent_task.add(t)
+            t.add_done_callback(self.persistent_task.discard)
 
     async def _stop_bot(self, bot_id):
         task = self.bot_tasks.get(bot_id)
         if task:
             task.cancel()
-            del self.bot_tasks[bot_id]
 
-    @register_handler(Command.START_ALL)
     async def start_all_bot(self, event: "BotControlEvent"):
         bots = self.bot_registry.get_all_bot()
         for bot in bots:
             await self._start_bot(bot)
 
-    @register_handler(Command.START_BOT)
     async def start_bot(self, event: "BotControlEvent"):
         bot_id = event.bot_id
         bot = self.bot_registry.get_bot(bot_id)
         await self._start_bot(bot)
 
-    @register_handler(Command.STOP_BOT)
     async def stop_bot(self, event: "BotControlEvent"):
         await self._stop_bot(event.bot_id)
 
-    @register_handler(Command.STOP_ALL)
-    async def stop_bot(self, event: "BotControlEvent"):
+    async def stop_all_bot(self, event: "BotControlEvent"):
         for bot_id, task in self.bot_tasks.items():
             await self._stop_bot(bot_id)

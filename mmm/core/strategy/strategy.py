@@ -13,22 +13,33 @@ logger = logging.getLogger(__name__)
 
 class StrategyMeta(type):
     def __new__(cls, name, bases, kwargs):  # noqa
-        event_registry = {}
-        timer_registry = {}
+        event_registry = cls.__get_registry_from_base__(cls, bases, '__event_registry__')
+        timer_registry = cls.__get_registry_from_base__(cls, bases, '__timer_registry__')
+
         for method_name, method in kwargs.items():
             e = getattr(method, '__sub_event__', None)
-            if e is None:
-                continue
-            if e in event_registry:
+            if e and e in event_registry:
                 raise SubEventError(f"You can not sub {e.__name__} twice.")
-            event_registry[e] = method_name
+            elif e:
+                event_registry[e] = method_name
             interval = getattr(method, '__timer_interval__', None)
-            if interval is not None:
+            if interval:
                 timer_registry[interval] = method_name
 
         kwargs['__event_registry__'] = event_registry
         kwargs['__timer_registry__'] = timer_registry
         return super().__new__(cls, name, bases, kwargs)
+
+    def __get_registry_from_base__(cls, bases, registry_name):  # noqa
+        if not bases:
+            return {}
+        for each in bases:
+            if getattr(each, registry_name):
+                registry = getattr(each, registry_name)
+                break
+        else:
+            registry = {}
+        return registry
 
 
 class Strategy(metaclass=StrategyMeta):
