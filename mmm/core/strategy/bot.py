@@ -132,7 +132,7 @@ class HandlerMetaclass(type):
 
 
 class HandlerABCMetaclass(ABCMeta, HandlerMetaclass):
-    pass
+    ...
 
 
 class BotCommandHandler(metaclass=HandlerABCMetaclass):
