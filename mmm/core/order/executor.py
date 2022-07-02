@@ -3,14 +3,12 @@ import logging
 from copy import deepcopy
 from typing import List
 
-from mmm.core.msg_hub import MessageHub
-from mmm.core.msg_hub.inner_msg_hub.event import OrderCreationEvent
-
 from mmm.core.hub.hub_factory import HubFactory
+from mmm.core.hub.inner_event_hub.event import OrderCreationEvent
 from mmm.core.storage import default_storage, Storage
-from mmm.credential import Credential
 from mmm.core.order.handler import OkexOrderHandler, OrderHandler, BinanceOrderHandler
 from mmm.core.order.filter import Filter
+from mmm.credential import Credential
 from mmm.project_types import Exchange
 
 logger = logging.getLogger(__name__)

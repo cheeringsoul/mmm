@@ -9,10 +9,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Callable, List
 
-from mmm.core.datasource.msg_hub import MessageHub
-from mmm.core.msg_hub.inner_msg_hub.event import Command, BotControlEvent
-
 from mmm.core.hub.hub_factory import HubFactory
+from mmm.core.hub.inner_event_hub.event import Command, BotControlEvent
 from mmm.core.storage import default_storage, Storage
 from mmm.core.strategy.decorators import register_handler
 from mmm.core.strategy.strategy import Strategy
@@ -42,7 +40,7 @@ class Bot:
 
     def on_close(self):
         sub_registry = self.strategy.get_sub_registry()
-        for sub in sub_registry:
+        for sub in sub_registry.get_subscriptions():
             self.ds_msg_hub.unsubscribe(sub)
 
     def create_timed_jobs(self):
@@ -87,7 +85,7 @@ class Bot:
         for sub, method_name in sub_registry.items():
             queue = self.ds_msg_hub.subscribe(sub)
             method = getattr(self.strategy, method_name)
-            name = f'task.{self.strategy.strategy_name}.sub.{sub.__name__}'
+            name = f'task.{self.strategy.strategy_name}.sub.{sub.__class__.__name__}'
             jobs[name] = consume(name, queue, method)
         return jobs
 
@@ -170,12 +168,13 @@ class BotCommandHandler(metaclass=HandlerABCMetaclass):
     async def __stop_all_bot__(self, event: "BotControlEvent"):
         await self.stop_all_bot(event)
 
-    def handel_command(self, command: Command):
+    def handel(self, event: "BotControlEvent"):
+        command = event.command
         method_name = getattr(self, '__command_registry__').get(command, None)
         if method_name is None:
             logger.error(f"can not find handler of command {command} in BotControlEventHandler")
             return
-        return getattr(self, method_name)(command)
+        return getattr(self, method_name)(event)
 
 
 class BotControlEventHandler(BotCommandHandler):
@@ -185,9 +184,6 @@ class BotControlEventHandler(BotCommandHandler):
         self.storage: "Storage" = storage
         self.bot_tasks = {}
         self.persistent_task = set()
-
-    def handel(self, event: "BotControlEvent"):
-        return self.handel_command(event.command)
 
     def _clear_bot_task(self, bot, task):
         bot.on_close()

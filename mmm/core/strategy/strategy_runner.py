@@ -8,6 +8,7 @@ from mmm.core.hub.inner_event_hub.event import BotControlEvent, Command
 from mmm.core.strategy.bot import BotRegistry, Bot, BotControlEventHandler
 from mmm.core.strategy.strategy import Strategy
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,7 +56,7 @@ class StrategyRunner:
 
     async def run(self, bot_id: Optional[str] = None):
         if bot_id:
-            self.control_event_queue.put_nowait(BotControlEvent(Command.START_ALL, bot_id))
+            self.control_event_queue.put_nowait(BotControlEvent(Command.START_BOT, bot_id))
         else:
             self.control_event_queue.put_nowait(BotControlEvent(Command.START_ALL))
         await self.listening_event()

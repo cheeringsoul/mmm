@@ -1,18 +1,4 @@
-import threading
-
 from mmm.config import settings
-
-#
-# def get_ds_msg_hub():
-#     """get datasource message hub"""
-#     if settings.MODEL == 'all_alone':
-#
-#
-#
-# def get_inner_event_hub():
-#     """get inner event hub"""
-#     if settings.MODEL == 'distributed':
-#
 from mmm.core.hub.datasource_msg_hub.hub import AsyncioQueueDsMsgHub, RabbitMQDsMsgHub
 from mmm.core.hub.inner_event_hub.hub import AsyncioQueueEventHub, RabbitmqEventHub
 from mmm.project_types import RunningModel

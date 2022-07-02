@@ -7,7 +7,7 @@ from mmm.core.hub.datasource_msg_hub.subscription import Subscription, ResponseO
 from mmm.project_types import Exchange
 
 
-class OKEXSubscription(metaclass=ABCMeta, Subscription):
+class OKEXSubscription(Subscription):
     def get_exchange(self) -> "Exchange":
         return Exchange.OKEX
 
@@ -18,7 +18,7 @@ class OKEXSubscription(metaclass=ABCMeta, Subscription):
         """
 
 
-class OKEXResponseOfSub(metaclass=ABCMeta, ResponseOfSub):
+class OKEXResponseOfSub(ResponseOfSub):
     def get_exchange(self) -> "Exchange":
         return Exchange.OKEX
 

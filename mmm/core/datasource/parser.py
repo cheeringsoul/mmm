@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from mmm.core.msg_hub.datasource_msg_hub.subscription import ResponseOfSub
+from mmm.core.hub.datasource_msg_hub.subscription import ResponseOfSub
 
 
 class Parser(ABC):

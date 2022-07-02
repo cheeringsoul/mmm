@@ -6,7 +6,6 @@ import websockets
 from typing import Optional, List
 
 from mmm.core.datasource.okex.subscription import OKEXSubscription
-from mmm.core.hub.base import MessageHub
 from mmm.credential import Credential
 from mmm.exceptions import CollectionError
 from mmm.third_party.okex.utils import get_local_timestamp, login_params

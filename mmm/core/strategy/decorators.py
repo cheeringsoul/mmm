@@ -1,11 +1,15 @@
 import inspect
 
 from functools import wraps
+from typing import Union
 
-from mmm.core.msg_hub.datasource_msg_hub.subscription import Subscription
+from mmm.core.hub.datasource_msg_hub.subscription import Subscription
 
 
-def timer(interval: int):
+FloatInt = Union[float, int]
+
+
+def timer(interval: "FloatInt"):
     """
     :param interval: seconds
     :return:
@@ -22,12 +26,12 @@ def timer(interval: int):
     return new_func
 
 
-def sub(topic: Subscription):
-    if isinstance(topic, Subscription):
+def sub(topic: "Subscription"):
+    if not isinstance(topic, Subscription):
         raise TypeError('param topic must be type of Subscription.')
 
     def new_func(func):
-        if getattr(func, '__subscription__'):
+        if hasattr(func, '__subscription__'):
             raise TypeError('You cannot decorate a function which already decorated with sub with the sub decorator.')
 
         if inspect.iscoroutinefunction(func):

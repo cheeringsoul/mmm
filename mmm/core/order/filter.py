@@ -1,13 +1,13 @@
 from abc import ABCMeta, abstractmethod
 
-from mmm.core.msg_hub.inner_msg_hub.event import OrderEvent
+from mmm.core.hub.inner_event_hub.event import OrderCreationEvent
 
 
 class Filter(metaclass=ABCMeta):
     @abstractmethod
-    def filter(self, order_event: "OrderEvent") -> bool: ...
+    def filter(self, order_event: "OrderCreationEvent") -> bool: ...
 
 
 class CoinFilter(Filter):
-    def filter(self, order_event: "OrderEvent"):
+    def filter(self, order_event: "OrderCreationEvent"):
         return True, ''

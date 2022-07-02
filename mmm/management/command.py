@@ -46,46 +46,59 @@ async def _start_data_source():
     return tasks
 
 
+async def _prepare_strategy_tasks():
+    from mmm.core.order.executor import OrderExecutor
+
+    tasks = []
+    datasource_tasks = _start_data_source()
+    order_executor_task = OrderExecutor().run_executor()
+    tasks.append(datasource_tasks)
+    tasks.append(order_executor_task)
+    await asyncio.gather(*tasks)
+
+
 @click.command()
 @click.option('--bot-id', default=None, help='bot id of strategy. if None, it will start all bots.')
-@click.option('--running-model', default='all_alone')
-def start_strategy(bot_id):
-    from mmm.core.order.executor import OrderExecutor
+@click.option('--running-model', default='all_alone',
+              type=click.Choice(['all_alone', 'distributed'], case_sensitive=False))
+def start_strategy(bot_id, running_model='all_alone'):
     from mmm.core.strategy import StrategyRunner
 
-    settings.MODEL = RunningModel.ALL_ALONE
     apps = load_strategy_app(settings.STRATEGIES)
 
-    async def main():
-        tasks = []
-        datasource_tasks = _start_data_source()
-        strategy_task = StrategyRunner(apps).run(bot_id)
-        order_executor_task = OrderExecutor().run_executor()
-        tasks.append(datasource_tasks)
-        tasks.append(strategy_task)
-        tasks.append(order_executor_task)
-        await asyncio.gather(*tasks)
+    if running_model.upper() == 'ALL_ALONE':
+        settings.MODEL = RunningModel.ALL_ALONE
 
-    asyncio.run(main())
+        async def main():
+            tasks = _prepare_strategy_tasks()
+            strategy_task = StrategyRunner(apps).run(bot_id)
+            await asyncio.gather(tasks, strategy_task)
+
+        asyncio.run(main())
+    else:
+        settings.MODEL = RunningModel.DISTRIBUTED
+        asyncio.run(StrategyRunner(apps).run(bot_id))
 
 
 @click.command()
-def prepare_strategy(with_datasource=None, topic=None):
+@click.option('--running-model', default='all_alone',
+              type=click.Choice(['all_alone', 'distributed'], case_sensitive=False))
+def strategy_listening(running_model):
     from mmm.config.tools import load_strategy_app
     from mmm.core.strategy import StrategyRunner
-    from mmm.core.datasource import OkexWsDatasource
 
     apps = load_strategy_app(settings.STRATEGIES)
-    click.echo(f"listening control command...")
-    if with_datasource == 'okex' and topic:
+    if running_model.upper() == 'ALL_ALONE':
+        settings.MODEL = RunningModel.ALL_ALONE
+
         async def main():
-            task1 = OkexWsDatasource().subscribe(topic)
-            task2 = StrategyRunner(apps).listening_event()
-            await asyncio.gather(task1, task2)
+            tasks = _prepare_strategy_tasks()
+            strategy_task = StrategyRunner(apps).listening_event()
+            await asyncio.gather(tasks, strategy_task)
+
         asyncio.run(main())
-    elif with_datasource == 'binance' and topic:
-        ...
     else:
+        settings.MODEL = RunningModel.DISTRIBUTED
         asyncio.run(StrategyRunner(apps).listening_event())
 
 
@@ -123,7 +136,7 @@ def init_database():
 
 cli.add_command(start_order_executor)
 cli.add_command(start_data_source)
-cli.add_command(prepare_strategy)
+cli.add_command(strategy_listening)
 cli.add_command(start_strategy)
 cli.add_command(list_strategy)
 cli.add_command(start_dashboard)
