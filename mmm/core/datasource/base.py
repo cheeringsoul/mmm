@@ -8,7 +8,6 @@ from mmm.core.hub.hub_factory import HubFactory
 class DataSource(metaclass=ABCMeta):
 
     def __init__(self):
-
         self.ds_msg_hub = HubFactory().get_ds_msg_hub()
 
     @abstractmethod

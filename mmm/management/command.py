@@ -24,10 +24,13 @@ def start_order_executor():
 @click.command()
 def start_data_source():
     settings.MODEL = RunningModel.DISTRIBUTED
-    asyncio.run(_start_data_source())
+    async def main():
+        tasks = _start_data_source
+        asyncio.gather(*tasks)
+    asyncio.run(main())
 
 
-async def _start_data_source():
+def _start_data_source():
     from mmm.core.datasource import OkexWsDatasource
     from mmm.core.datasource.binance import BinanceWsDatasource
 
@@ -40,21 +43,21 @@ async def _start_data_source():
     tasks = []
     for exchange, subs in exchange_sub_conf.items():
         if exchange == Exchange.OKEX:
-            tasks.append(OkexWsDatasource().subscribe(subs))
+            tasks.append(asyncio.create_task(OkexWsDatasource().subscribe(subs), name='task.okex_datasource'))
         elif exchange == Exchange.BINANCE:
-            tasks.append(BinanceWsDatasource().subscribe(subs))
+            tasks.append(asyncio.create_task(BinanceWsDatasource().subscribe(subs), name='task.binance_datasource'))
     return tasks
 
 
-async def _prepare_strategy_tasks():
+def _prepare_strategy_tasks():
     from mmm.core.order.executor import OrderExecutor
 
     tasks = []
     datasource_tasks = _start_data_source()
-    order_executor_task = OrderExecutor().run_executor()
-    tasks.append(datasource_tasks)
+    order_executor_task = asyncio.create_task(OrderExecutor().run_executor(), name='task.order_executor')
+    tasks.extend(datasource_tasks)
     tasks.append(order_executor_task)
-    await asyncio.gather(*tasks)
+    return tasks
 
 
 @click.command()
@@ -71,8 +74,9 @@ def start_strategy(bot_id, running_model='all_alone'):
 
         async def main():
             tasks = _prepare_strategy_tasks()
-            strategy_task = StrategyRunner(apps).run(bot_id)
-            await asyncio.gather(tasks, strategy_task)
+            strategy_task = asyncio.create_task(StrategyRunner(apps).run(bot_id), name='task.start_strategy')
+            tasks.append(strategy_task)
+            await asyncio.gather(*tasks)
 
         asyncio.run(main())
     else:
@@ -93,8 +97,9 @@ def strategy_listening(running_model):
 
         async def main():
             tasks = _prepare_strategy_tasks()
-            strategy_task = StrategyRunner(apps).listening_event()
-            await asyncio.gather(tasks, strategy_task)
+            strategy_task = asyncio.create_task(StrategyRunner(apps).listening_event(), name='task.strategy_listening')
+            tasks.append(strategy_task)
+            await asyncio.gather(*tasks)
 
         asyncio.run(main())
     else:

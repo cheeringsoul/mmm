@@ -29,7 +29,7 @@ class SubRegistry:
         self._registry[s] = method_name
 
     def get_subscriptions(self):
-        return self._registry.keys()
+        return list(self._registry.keys())
 
     def items(self):
         return self._registry.items()
@@ -135,7 +135,9 @@ class Strategy(metaclass=StrategyMeta):
 
     @classmethod
     def get_subscriptions(cls):
-        return cls.__sub_registry__.get_subscriptions()
+        if cls.__sub_registry__:
+            return cls.__sub_registry__.get_subscriptions()
+        return []
 
     def __repr__(self):
         return f'strategy.{self.get_strategy_name()}'
