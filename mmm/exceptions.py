@@ -10,9 +10,17 @@ class HandlerRegisterError(Exception):
     pass
 
 
-class SubEventError(Exception):
+class SubscriptionError(Exception):
+    pass
+
+
+class TimerError(Exception):
     pass
 
 
 class EventSourceNotFoundError(Exception):
+    pass
+
+
+class CollectionError(Exception):
     pass

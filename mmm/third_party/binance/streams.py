@@ -985,7 +985,7 @@ class BinanceSocketManager:
 
         Symbols in socket name must be lowercase i.e bnbbtc@aggTrade, neobtc@ticker
 
-        Combined stream events are wrapped as follows: {"stream":"<streamName>","data":<rawPayload>}
+        Combined stream event are wrapped as follows: {"stream":"<streamName>","data":<rawPayload>}
 
         https://github.com/binance-exchange/binance-official-api-docs/blob/master/web-socket-streams.md
 
@@ -1006,7 +1006,7 @@ class BinanceSocketManager:
 
         Symbols in socket name must be lowercase i.e bnbbtc@aggTrade, neobtc@ticker
 
-        Combined stream events are wrapped as follows: {"stream":"<streamName>","data":<rawPayload>}
+        Combined stream event are wrapped as follows: {"stream":"<streamName>","data":<rawPayload>}
 
         https://binance-docs.github.io/apidocs/voptions/en/#account-and-trading-interface
 
@@ -1028,7 +1028,7 @@ class BinanceSocketManager:
 
         Symbols in socket name must be lowercase i.e bnbbtc@aggTrade, neobtc@ticker
 
-        Combined stream events are wrapped as follows: {"stream":"<streamName>","data":<rawPayload>}
+        Combined stream event are wrapped as follows: {"stream":"<streamName>","data":<rawPayload>}
 
         https://github.com/binance-exchange/binance-official-api-docs/blob/master/web-socket-streams.md
 

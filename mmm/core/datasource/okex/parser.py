@@ -2,30 +2,29 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List
 
-from mmm.core.datasource.base import ParserFactory
-from mmm.core.events.event import BarEvent, TradesEvent, OrderBookEvent, Event
-from mmm.core.events.parser import Parser
+from mmm.core.datasource.okex.subscription import OKEXTradesResp, OKEXCandleResp
+from mmm.core.datasource.parser import Parser, ParserFactory
 
 
 class TradesParser(Parser):
 
-    def parse(self, data: Dict) -> "TradesEvent" or List["TradesEvent"]:
+    def parse(self, data: Dict) -> List["OKEXTradesResp"]:
         result = []
         data = data['data']
         for each in data:
-            ticker = TradesEvent(each['instId'], Decimal(each['px']), Decimal(each['sz']), each['side'],
-                                 datetime.fromtimestamp(int(each['ts'])/1000), data)
-            result.append(ticker)
+            item = OKEXTradesResp(each['instId'], Decimal(each['px']), Decimal(each['sz']), each['side'],
+                                  datetime.fromtimestamp(int(each['ts'])/1000), data)
+            result.append(item)
         return result
 
 
-class BarParser(Parser):
+class CandleParser(Parser):
 
-    def parse(self, data) -> "BarEvent" or List["BarEvent"]:
+    def parse(self, data) -> List["OKEXCandleResp"]:
         result = []
         for each in data['data']:
-            bar = BarEvent(
-                bar_type=data['arg']['channel'],
+            bar = OKEXCandleResp(
+                candle_type=data['arg']['channel'],
                 inst_id=data['arg']['instId'],
                 ts=datetime.fromtimestamp(int(each[0])/1000),
                 open_price=Decimal(each[1]),
@@ -40,19 +39,5 @@ class BarParser(Parser):
         return result
 
 
-class OrderbookParser(Parser):
-
-    def parse(self, data: Dict) -> "OrderBookEvent":
-        return OrderBookEvent()  # todo
-
-
-class DefaultParser(Parser):
-
-    def parse(self, data: Dict) -> "Event" or List["Event"]:
-        return data
-
-
 parser_factory = ParserFactory()
 parser_factory.register('trades', TradesParser())
-parser_factory.register('books', OrderbookParser())
-parser_factory.register('candle', BarParser())

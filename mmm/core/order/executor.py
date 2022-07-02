@@ -1,13 +1,14 @@
-import asyncio
 import logging
 
 from copy import deepcopy
 from typing import List
 
-from mmm.config import settings
+from mmm.core.msg_hub import MessageHub
+from mmm.core.msg_hub.inner_msg_hub.event import OrderCreationEvent
+
+from mmm.core.hub.hub_factory import HubFactory
 from mmm.core.storage import default_storage, Storage
 from mmm.credential import Credential
-from mmm.core.events.event import OrderEvent
 from mmm.core.order.handler import OkexOrderHandler, OrderHandler, BinanceOrderHandler
 from mmm.core.order.filter import Filter
 from mmm.project_types import Exchange
@@ -17,9 +18,7 @@ logger = logging.getLogger(__name__)
 
 class OrderExecutor:
     def __init__(self, storage: "Storage" = default_storage):
-        self.event_source = settings.EVENT_SOURCE_CONF.get(OrderEvent)
-        if self.event_source is None:
-            logger.error('can not find a event source of OrderEvent.')
+        self.order_event_hub = HubFactory().get_inner_event_hub()
         self.storage: "Storage" = storage
         self.cached_handler = {}
         self.middlewares: List["Filter"] = []  # todo
@@ -37,7 +36,7 @@ class OrderExecutor:
     def set_handler(self, exchange: "Exchange", handler: "OrderHandler"):
         self.cached_handler[exchange] = handler
 
-    async def on_order_event(self, order_event: "OrderEvent"):
+    async def on_order_event(self, order_event: "OrderCreationEvent"):
         c = deepcopy(order_event)
         for middleware in self.middlewares:
             rv, reason = middleware.filter(c)
@@ -48,12 +47,9 @@ class OrderExecutor:
         order_result = await order_handler.create_order(order_event)
         self.storage.save_order(order_result)
 
-    def create_task(self):
-
-        async def _create_task():
-            while True:
-                event = await self.event_source.get()
-                if event:
-                    await self.on_order_event(event)
-
-        asyncio.get_event_loop().create_task(_create_task(), name=f'task.order.executor')
+    async def run_executor(self):
+        queue = self.order_event_hub.subscribe(OrderCreationEvent)
+        while True:
+            event = await queue.get()
+            if event:
+                await self.on_order_event(event)

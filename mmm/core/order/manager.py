@@ -1,18 +1,23 @@
 import asyncio
 import logging
 import time
+
 from abc import ABCMeta, abstractmethod
 from typing import Optional
 
-from mmm.config import settings
-from mmm.core.events.event import OrderEvent
+from mmm.core.hub.hub_factory import HubFactory
+from mmm.core.hub.inner_event_hub.event import OrderCreationEvent
 from mmm.core.storage import default_storage, Storage
 from mmm.project_types import OrderResult
 
 
 class OrderManager(metaclass=ABCMeta):
+
+    def __init__(self):
+        self.msg_hub = HubFactory().get_inner_event_hub()
+
     @abstractmethod
-    def create_order(self, order_event: "OrderEvent"): ...
+    def create_order(self, order_event: "OrderCreationEvent"): ...
 
     @abstractmethod
     def query_order(self, uniq_id): ...
@@ -23,14 +28,12 @@ class OrderManager(metaclass=ABCMeta):
 
 class DefaultOrderManager(OrderManager):
     def __init__(self, storage: "Storage" = default_storage):
-        self.event_source = settings.EVENT_SOURCE_CONF.get(OrderEvent)
-        if self.event_source is None:
-            raise RuntimeError('can not find event source of OrderEvent.')
+        super().__init__()
         self.storage = storage
 
-    def create_order(self, order_event: "OrderEvent"):
+    def create_order(self, order_event: "OrderCreationEvent"):
         logging.info(f'create order, order_event :{order_event}')
-        self.event_source.put_nowait(order_event)
+        self.msg_hub.publish(order_event)
 
     def query_order(self, uniq_id) -> Optional[OrderResult]:
         return self.storage.query_order(uniq_id)

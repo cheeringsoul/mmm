@@ -1,19 +1,19 @@
+from mmm.core.datasource.okex.subscription import OKEXTrades, OKEXTradesResp, OKEXCandle, OKEXCandleResp
+from mmm.core.strategy import Strategy
 from mmm.credential import Credential
-from mmm.core.events.event import TradesEvent, OrderBookEvent
-from mmm.core.strategy.core import Strategy
-from mmm.core.strategy.decorators import sub_event, timer
+from mmm.core.strategy.decorators import sub, timer
 
 
 class GridStrategy(Strategy):
 
-    @sub_event(TradesEvent)
-    def on_ticker(self, ticker: TradesEvent):
-        print(ticker)
+    @sub(OKEXTrades('BTC-USDT-SWAP'))
+    def on_trades(self, data: "OKEXTradesResp"):
+        print(data)
         print('.'*20)
 
-    @sub_event(OrderBookEvent)
-    def on_orderbook(self, order_book: OrderBookEvent):
-        print(order_book)
+    @sub(OKEXCandle('candle1D', 'BTC-USDT-SWAP'))
+    def on_orderbook(self, data: OKEXCandleResp):
+        print(data)
         print('-'*20)
 
     @timer(3)

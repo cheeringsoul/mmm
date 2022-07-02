@@ -1,10 +1,12 @@
 import asyncio
-
 import click
+from collections import defaultdict
 from prettytable import PrettyTable
+from sqlalchemy_utils import database_exists, create_database
 
 from mmm.config import settings
-from sqlalchemy_utils import database_exists, create_database
+from mmm.config.tools import load_strategy_app
+from mmm.project_types import Exchange, RunningModel
 
 
 @click.group()
@@ -15,52 +17,59 @@ def cli(): ...
 def start_order_executor():
     from mmm.core.order.executor import OrderExecutor
 
-    OrderExecutor().create_task()
-    asyncio.get_event_loop().run_forever()
+    settings.MODEL = RunningModel.DISTRIBUTED
+    asyncio.run(OrderExecutor().run_executor())
 
 
 @click.command()
-@click.option('--name', '-n', required=True, type=click.Choice(['okex', 'binance']))
-@click.option('--topic', '-t', required=True, type=str)
-def start_data_source(name, topic):
-    from mmm.core.datasource import OkexWsDatasource
+def start_data_source():
+    settings.MODEL = RunningModel.DISTRIBUTED
+    asyncio.run(_start_data_source())
 
-    if name == 'okex':
-        task = OkexWsDatasource().subscribe(topic)
-    elif name == 'binance':
-        """todo"""
-    asyncio.run(task)
+
+async def _start_data_source():
+    from mmm.core.datasource import OkexWsDatasource
+    from mmm.core.datasource.binance import BinanceWsDatasource
+
+    apps = load_strategy_app(settings.STRATEGIES)
+    exchange_sub_conf = defaultdict(list)
+    for app in apps:
+        subscriptions = app.get_subscriptions()
+        for sub in subscriptions:
+            exchange_sub_conf[sub.get_exchange()].append(sub)
+    tasks = []
+    for exchange, subs in exchange_sub_conf.items():
+        if exchange == Exchange.OKEX:
+            tasks.append(OkexWsDatasource().subscribe(subs))
+        elif exchange == Exchange.BINANCE:
+            tasks.append(BinanceWsDatasource().subscribe(subs))
+    return tasks
 
 
 @click.command()
 @click.option('--bot-id', default=None, help='bot id of strategy. if None, it will start all bots.')
-@click.option('--with-datasource', type=click.Choice(['okex', 'binance']),
-              help='If you start a strategy bot with all-alone model, you must specify a datasource. '
-                   'If you start strategy bot with distributed model, then you can ignore this option')
-@click.option('--topic', type=str, help="If you use all-alone model, you must specify topic to subscribe.")
-def start_strategy(bot_id, with_datasource=None, topic=None):
-    from mmm.config.tools import load_strategy_app
+@click.option('--running-model', default='all_alone')
+def start_strategy(bot_id):
+    from mmm.core.order.executor import OrderExecutor
     from mmm.core.strategy import StrategyRunner
-    from mmm.core.datasource import OkexWsDatasource
 
+    settings.MODEL = RunningModel.ALL_ALONE
     apps = load_strategy_app(settings.STRATEGIES)
-    if with_datasource == 'okex' and topic:
-        async def main():
-            task1 = OkexWsDatasource().subscribe(topic)
-            task2 = StrategyRunner(apps).start_strategy(bot_id)
-            await asyncio.gather(task1, task2)
-        asyncio.run(main())
-    elif with_datasource == 'binance' and topic:
-        ...
-    else:
-        asyncio.run(StrategyRunner(apps).start_strategy(bot_id))
+
+    async def main():
+        tasks = []
+        datasource_tasks = _start_data_source()
+        strategy_task = StrategyRunner(apps).run(bot_id)
+        order_executor_task = OrderExecutor().run_executor()
+        tasks.append(datasource_tasks)
+        tasks.append(strategy_task)
+        tasks.append(order_executor_task)
+        await asyncio.gather(*tasks)
+
+    asyncio.run(main())
 
 
 @click.command()
-@click.option('--with-datasource', type=click.Choice(['okex', 'binance']),
-              help='If you start a strategy bot in all-alone model, you must specify a datasource. '
-                   'If you start strategy bot in distributed model, then you can ignore this option')
-@click.option('--topic', type=str, help="If you use all-alone model, you must specify topic to subscribe.")
 def prepare_strategy(with_datasource=None, topic=None):
     from mmm.config.tools import load_strategy_app
     from mmm.core.strategy import StrategyRunner
@@ -71,13 +80,13 @@ def prepare_strategy(with_datasource=None, topic=None):
     if with_datasource == 'okex' and topic:
         async def main():
             task1 = OkexWsDatasource().subscribe(topic)
-            task2 = StrategyRunner(apps).start()
+            task2 = StrategyRunner(apps).listening_event()
             await asyncio.gather(task1, task2)
         asyncio.run(main())
     elif with_datasource == 'binance' and topic:
         ...
     else:
-        asyncio.run(StrategyRunner(apps).start())
+        asyncio.run(StrategyRunner(apps).listening_event())
 
 
 @click.command()

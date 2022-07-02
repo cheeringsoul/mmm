@@ -1,33 +1,33 @@
 import json
 import logging
 import asyncio
-from typing import Optional
-
 import websockets
 
+from typing import Optional, List
+
+from mmm.core.datasource.okex.subscription import OKEXSubscription
+from mmm.core.hub.base import MessageHub
 from mmm.credential import Credential
+from mmm.exceptions import CollectionError
 from mmm.third_party.okex.utils import get_local_timestamp, login_params
-from .parser import ParserFactory, parser_factory
-from mmm.core.events.event import Event
-from mmm.core.events.dispatcher import Dispatcher
+from mmm.core.datasource.base import DataSource
+from mmm.core.datasource.okex.parser import parser_factory
+from mmm.core.datasource.parser import ParserFactory
 
 
 logger = logging.getLogger(__name__)
 
 
-class CollectionError(Exception):
-    """"""
-
-
-class OkexWsDatasource:
+class OkexWsDatasource(DataSource):
     __uri__ = "wss://wsaws.okex.com:8443/ws/v5/public"  # noqa
     __ping_interval__ = 20
 
-    def __init__(self, credential: Optional["Credential"] = None, factory: "ParserFactory" = parser_factory):
+    def __init__(self, credential: Optional["Credential"] = None,
+                 factory: "ParserFactory" = parser_factory):
+        super().__init__()
         self.received_pong = False
         self.credential: Optional["Credential"] = credential
         self.parser_factory: "ParserFactory" = factory
-        self.dispatcher = Dispatcher()
 
     async def ping(self, ws):
         await asyncio.sleep(self.__ping_interval__)
@@ -38,16 +38,21 @@ class OkexWsDatasource:
         if not self.received_pong:
             raise CollectionError('looking forward a pong message, but not received.')
 
-    async def subscribe(self, topic: str):
-        async def create_task():
-            try:
-                await self._do_subscribe(topic)
-            except CollectionError as e:
-                logger.exception("looking forward a pong message, but not received.", exc_info=e)
-            except Exception as e:
-                logger.exception(e)
-                logger.info('reconnecting...')
-        await asyncio.create_task(create_task(), name=f'task.okex.ws.sub.{topic}')
+    async def subscribe(self, subscriptions: List["OKEXSubscription"]):
+        topics = {
+            'op': 'subscribe',
+            'args': []
+        }
+        for sub in subscriptions:
+            topic = sub.get_topic()
+            topics['args'].extend(topic['args'])
+        try:
+            await self._do_subscribe(json.dumps(topics))
+        except CollectionError as e:
+            logger.exception("looking forward a pong message, but not received.", exc_info=e)
+        except Exception as e:
+            logger.exception(e)
+            logger.info('reconnecting...')
 
     async def _do_subscribe(self, topic: str):
         async with websockets.connect(self.__uri__, ping_interval=None) as ws:
@@ -63,30 +68,27 @@ class OkexWsDatasource:
                     logger.error(f'login error: {rv}')
                     return
             await ws.send(topic)
-            msg = await ws.recv()
-            msg = json.loads(msg)
-            assert msg['event'] == 'subscribe', msg
+            rv = await ws.recv()
+            data = json.loads(rv)
+            assert data['event'] == 'subscribe', data
             ping = asyncio.create_task(self.ping(ws))
             while True:
                 try:
-                    msg = await ws.recv()
-                    if msg == 'pong':
+                    data = await ws.recv()
+                    if data == 'pong':
                         logger.info('received a pong message')
                         self.received_pong = True
                     else:
-                        msg = json.loads(msg)
-                        if msg.get('event') == 'subscribe':
+                        data = json.loads(data)
+                        if data.get('event') == 'subscribe':
                             logger.info(f'subscribe {topic} successfully')
-                        elif msg.get('event') == 'error':
-                            logger.error(f'subscribe {topic} failed, {msg}')
+                        elif data.get('event') == 'error':
+                            logger.error(f'subscribe {topic} failed, {data}')
                         else:
-                            channel = msg['arg']['channel']
-                            event = self.parser_factory.get(channel).parse(msg)
-                            if isinstance(event, Event):
-                                await self.dispatcher.dispatch(event)
-                            elif isinstance(event, list):
-                                for each in event:
-                                    await self.dispatcher.dispatch(each)
+                            channel = data['arg']['channel']
+                            msg = self.parser_factory.get(channel).parse(data)
+                            for each in msg:
+                                self.ds_msg_hub.publish(each)
                     ping.cancel()
                     ping = asyncio.create_task(self.ping(ws))
                 except Exception as e:

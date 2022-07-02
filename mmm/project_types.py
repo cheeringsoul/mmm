@@ -4,6 +4,11 @@ from enum import Enum
 from typing import Optional
 
 
+class RunningModel(Enum):
+    ALL_ALONE = 1
+    DISTRIBUTED = 2
+
+
 @dataclass
 class Asset:
     inst_id: str

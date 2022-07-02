@@ -4,8 +4,9 @@ import logging
 import traceback
 
 from abc import ABC, abstractmethod
+
+from mmm.core.hub.inner_event_hub.event import OrderCreationEvent
 from mmm.credential import Credential
-from mmm.core.events.event import OrderEvent
 from mmm.project_types import OrderResult, OrderStatus
 from mmm.third_party.okex.trade_api import TradeAPI as OkexTradeAPI
 
@@ -18,7 +19,7 @@ class OrderHandler(ABC):
         self.credential = credential
 
     @abstractmethod
-    async def create_order(self, order_event: "OrderEvent"):
+    async def create_order(self, event: "OrderCreationEvent"):
         pass
 
     @abstractmethod
@@ -33,7 +34,7 @@ class OkexOrderHandler(OrderHandler):
         self.trade_client = OkexTradeAPI(credential.api_key, credential.secret_key, credential.phrase,
                                          use_server_time=True, flag='0')
 
-    async def create_order(self, order_event: "OrderEvent") -> "OrderResult":
+    async def create_order(self, order_event: "OrderCreationEvent") -> "OrderResult":
         params = order_event.params
         client_order_id = params['clOrdId']
         inst_id = params['instId']

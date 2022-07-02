@@ -13,8 +13,8 @@ class Settings:
         self._set_config(default_config)
         self._set_config(settings_module)
 
-        event_source_conf = getattr(self, 'EVENT_SOURCE_CONF')
-        setattr(self, 'EVENT_SOURCE_CONF', frozendict(event_source_conf))
+    def __setattr__(self, key, value):
+        setattr(self, key, value)
 
     def _set_config(self, settings_module):
         mod = importlib.import_module(settings_module)
@@ -36,6 +36,9 @@ class LazySettings:
         if not settings_module:
             raise ConfigureError('setting module is not configured.')
         self._wrapped = Settings(settings_module)
+
+    def __setattr__(self, key, value):
+        setattr(self._wrapped, key, value)
 
     def __getattr__(self, name):
         if self._wrapped is empty:
