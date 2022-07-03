@@ -87,7 +87,7 @@ def start_strategy(bot_id, running_model='all_alone'):
 @click.command()
 @click.option('--running-model', default='all_alone',
               type=click.Choice(['all_alone', 'distributed'], case_sensitive=False))
-def strategy_listening(running_model):
+def strategy_listening(running_model='all_alone'):
     from mmm.config.tools import load_strategy_app
     from mmm.core.strategy import StrategyRunner
 

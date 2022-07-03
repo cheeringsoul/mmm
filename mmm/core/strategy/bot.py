@@ -33,9 +33,7 @@ class Bot:
         self.ds_msg_hub = HubFactory().get_ds_msg_hub()
 
     async def gather_tasks(self):
-        tasks = []
-        for name, job in ChainMap(self.create_timed_jobs(), self.create_event_consuming_jobs()).items():
-            tasks.append(asyncio.create_task(job, name=name))
+        tasks = self.create_timed_tasks() + self.create_event_consuming_tasks()
         await asyncio.gather(*tasks)
 
     def on_close(self):
@@ -43,7 +41,7 @@ class Bot:
         for sub in sub_registry.get_subscriptions():
             self.ds_msg_hub.unsubscribe(sub)
 
-    def create_timed_jobs(self):
+    def create_timed_tasks(self):
         async def _timer(name_: str, i: int, callback: Callable):
             try:
                 callback()
@@ -58,15 +56,15 @@ class Bot:
                     logger.error(f"task {name_} {e}")
                 else:
                     logger.error(f"task {name_} canceled.")
-        job = {}
+        tasks = []
         registry = self.strategy.get_timer_registry()
         for interval, method_name in registry.items():
             method = getattr(self.strategy, method_name)
             name = f'{self.strategy.strategy_name}.timer({interval})'
-            job[name] = _timer(name, interval, method)
-        return job
+            tasks.append(asyncio.create_task(_timer(name, interval, method), name=f'task.timer.{interval}'))
+        return tasks
 
-    def create_event_consuming_jobs(self):
+    def create_event_consuming_tasks(self):
         async def consume(name_, queue_, callback):
             try:
                 while True:
@@ -80,14 +78,14 @@ class Bot:
                     logger.error(f"task {name_} {e}")
                 else:
                     logger.error(f"task {name_} canceled.")
-        jobs = {}
+        tasks = []
         sub_registry = self.strategy.get_sub_registry()
         for sub, method_name in sub_registry.items():
             queue = self.ds_msg_hub.subscribe(sub)
             method = getattr(self.strategy, method_name)
             name = f'task.{self.strategy.strategy_name}.sub.{sub.__class__.__name__}'
-            jobs[name] = consume(name, queue, method)
-        return jobs
+            tasks.append(asyncio.create_task(consume(name, queue, method), name=name))
+        return tasks
 
 
 class BotRegistry:
