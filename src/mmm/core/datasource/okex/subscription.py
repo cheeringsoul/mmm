@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict

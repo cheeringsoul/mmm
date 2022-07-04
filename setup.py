@@ -5,7 +5,8 @@ setup(
     name='mmm',
     author='ymy',
     author_email='icheeringsoul@163.com',
-    packages=find_packages(),
+    packages=find_packages('src'),
+    package_dir={"": "src"},
     version='0.0.1',
     install_requires=[
         "websockets == 10.1",

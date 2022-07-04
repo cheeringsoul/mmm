@@ -1,6 +1,5 @@
 import importlib
 import os
-from frozendict import frozendict
 
 from mmm.exceptions import ConfigureError
 
