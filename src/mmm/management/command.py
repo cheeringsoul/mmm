@@ -25,8 +25,8 @@ def start_order_executor():
 def start_data_source():
     settings.MODEL = RunningModel.DISTRIBUTED
     async def main():
-        tasks = _start_data_source
-        asyncio.gather(*tasks)
+        tasks = _start_data_source()
+        await asyncio.gather(*tasks)
     asyncio.run(main())
 
 

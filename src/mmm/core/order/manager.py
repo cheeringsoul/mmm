@@ -47,7 +47,7 @@ class DefaultOrderManager(OrderManager):
                 time.sleep(0.01)
 
         event = asyncio.Event()
-        fut = asyncio.to_thread(do_query, event)
+        fut = asyncio.to_thread(do_query, uniq_id, event)
         try:
             return await asyncio.wait_for(fut, timeout=timeout)
         except (asyncio.TimeoutError, Exception):

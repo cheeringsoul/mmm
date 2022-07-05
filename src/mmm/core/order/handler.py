@@ -52,23 +52,20 @@ class OkexOrderHandler(OrderHandler):
             if resp['code'] != '0':
                 result.status = OrderStatus.FAILED
                 result.msg = json.dumps(resp)
-            else:
-                rv = await self.query_order(inst_id, client_order_id)
-                if rv.get('code') != '0':
-                    result.status = OrderStatus.FAILED
-                    result.msg = json.dumps(rv)
-                else:
-                    result.exchange_resp = rv
-                    order_id = rv['data'][0]['orderId']
-                    result.order_id = order_id
-                    result.status = OrderStatus.SUCCESS
         except Exception as e:
             tb = traceback.format_exc()
             err = f"create order error, params: {params}, exception: {e}, traceback: {tb}"
             logger.error(err)
-            result.status = OrderStatus.FAILED
-            result.msg = err
         finally:
+            rv = await self.query_order(inst_id, client_order_id)
+            if rv.get('code') != '0':
+                result.status = OrderStatus.FAILED
+                result.msg = json.dumps(rv)
+            else:
+                result.exchange_resp = rv
+                order_id = rv['data'][0]['ordId']
+                result.order_id = order_id
+                result.status = OrderStatus.SUCCESS
             return result
 
     async def create_batch_order(self):
